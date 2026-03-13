@@ -75,7 +75,7 @@ class OpenAIClient implements LLMClient {
       apiKey,
       baseURL,
       defaultHeaders: baseURL.includes("openrouter")
-        ? { "HTTP-Referer": "https://opencodewiki.app", "X-Title": "OpenCodeWiki" }
+        ? { "HTTP-Referer": "https://github.com/anthony-maio/cartograph", "X-Title": "Cartograph" }
         : undefined,
     });
   }

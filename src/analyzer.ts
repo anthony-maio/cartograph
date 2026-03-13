@@ -125,7 +125,7 @@ const CONFIG_PATTERNS = [
 ];
 
 export async function cloneRepo(repoUrl: string, branch?: string): Promise<string> {
-  const tmpDir = path.join(os.tmpdir(), `opencodewiki-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const tmpDir = path.join(os.tmpdir(), `cartograph-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   fs.mkdirSync(tmpDir, { recursive: true });
 
   const git = simpleGit();

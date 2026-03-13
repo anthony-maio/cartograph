@@ -11,7 +11,7 @@ import { wikiToMarkdown, contextToMarkdown, staticToMarkdown } from "./markdown"
 const program = new Command();
 
 program
-  .name("opencodewiki")
+  .name("cartograph")
   .description("Generate intelligent wiki documentation from any Git repo. Targeted context for LLMs — only the files that matter.")
   .version("1.0.0")
   .argument("<repo>", "GitHub URL or local directory path")
@@ -88,9 +88,9 @@ async function run(repo: string, opts: {
     }
 
     // === LLM modes require an API key ===
-    const apiKey = opts.key || process.env.OPENCODEWIKI_API_KEY;
+    const apiKey = opts.key || process.env.CARTOGRAPH_API_KEY;
     if (!apiKey) {
-      console.error(chalk.red("Error: API key required. Use --key, set OPENCODEWIKI_API_KEY, or use --static for no-LLM mode."));
+      console.error(chalk.red("Error: API key required. Use --key, set CARTOGRAPH_API_KEY, or use --static for no-LLM mode."));
       process.exit(1);
     }
 

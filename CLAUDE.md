@@ -4,57 +4,63 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Is
 
-OpenCodeWiki is a CLI tool — a smarter alternative to gitingest. Instead of dumping an entire codebase into an LLM, it scores files by importance (entry points, fan-in, exports) and runs a 3-pass LLM pipeline to produce structured architecture documentation. It also has a context selection mode that picks only the files an LLM needs for a specific task.
+Cartograph is an MCP server + CLI tool for intelligent codebase analysis. It scores files by importance (entry points, fan-in, exports), maps dependencies, and provides targeted context for AI agents. Instead of dumping an entire repo, it gives agents only what matters.
+
+Two modes:
+- **MCP server** (`src/mcp.ts`) — Tools that AI agents call directly. No external LLM needed since the agent IS the LLM.
+- **CLI** (`src/cli.ts`) — Standalone tool with optional LLM-powered synthesis via Gemini/OpenAI/OpenRouter.
 
 ## Commands
 
 ```bash
 npm install          # Install dependencies
-npm run dev -- <args>  # Run CLI in dev mode via tsx (e.g. npm run dev -- . -p gemini -k $KEY)
-npm run build        # Bundle to dist/cli.cjs via esbuild
+npm run dev -- <args>  # Run CLI in dev mode (e.g. npm run dev -- . --static)
+npm run dev:mcp      # Run MCP server in dev mode
+npm run build        # Bundle both CLI and MCP server to dist/
 npm run start -- <args>  # Run built CLI
+npm run start:mcp    # Run built MCP server
 npm run check        # TypeScript type-check (no emit)
 ```
+
+## MCP Server
+
+Registered in `C:\Users\Ant\.claude\claude_desktop_config.json` alongside mnemos. Exposes two tools:
+
+- **`analyze_repo`** — Full static analysis: scored file list, dependency graph, top N file contents. Accepts local path or GitHub URL.
+- **`get_file_contents`** — Read specific files from a repo. Use after `analyze_repo` to drill into files of interest.
 
 ## CLI Usage
 
 ```bash
-opencodewiki <repo> [options]
+cartograph <repo> [options]
 
-# Full analysis of a local repo
-opencodewiki ./my-project -p gemini -k $GEMINI_KEY -o wiki.md
+# Static mode (no LLM, no API key)
+cartograph ./my-project --static -o analysis.md
 
-# Full analysis of a remote repo
-opencodewiki https://github.com/owner/repo -p openai -k $OPENAI_KEY
+# Full LLM analysis
+cartograph ./my-project -p gemini -k $GEMINI_KEY -o wiki.md
 
-# Context selection — get only the files needed for a task
-opencodewiki ./my-project -c "add user authentication" -p gemini -k $KEY
-
-# JSON output
-opencodewiki ./my-project -p gemini -k $KEY --json -o data.json
+# Context selection — only files needed for a task
+cartograph ./my-project -c "add user authentication" -p gemini -k $KEY
 ```
 
-Providers: `gemini` (default), `openai`, `openrouter`. Key can also be set via `OPENCODEWIKI_API_KEY` env var.
+Providers: `gemini` (default), `openai`, `openrouter`. Key via `--key` or `CARTOGRAPH_API_KEY` env var.
 
 ## Architecture
 
-Single-process CLI tool. All source in `src/`.
+All source in `src/`. Two entry points, shared core.
 
-**Pipeline** (the core — runs sequentially):
-1. **Clone or use local** — shallow git clone for URLs, direct path for local repos
-2. **Static Analysis** (`src/analyzer.ts`) — walk files, extract imports/exports via regex, build dependency graph, compute importance scores
-3. **Summarize** (`src/pipeline.ts:summarizeFiles`) — fast LLM model summarizes top 30 files, batched (5 for Gemini, 3 for others)
-4. **Synthesize** (`src/pipeline.ts:synthesizeWiki`) — strong LLM model produces overview/architecture/patterns/modules/contextGuide
-5. **Output** (`src/markdown.ts`) — serialize WikiResult to markdown or JSON
-
-**Key files:**
-- `src/cli.ts` — Entry point, argument parsing (commander), orchestration
-- `src/analyzer.ts` — Git clone, file walking, import/export extraction, importance scoring
-- `src/pipeline.ts` — LLM-powered summarization and synthesis (provider-agnostic)
-- `src/llm.ts` — Unified LLM client abstraction (Gemini native SDK, OpenAI/OpenRouter via OpenAI SDK)
+**Core** (pure logic, no web deps):
+- `src/analyzer.ts` — Git clone, file walking, import/export extraction, importance scoring heuristics
 - `src/schema.ts` — All TypeScript types, Zod schemas, provider/model config
-- `src/markdown.ts` — WikiResult and context results to markdown serialization
+- `src/pipeline.ts` — LLM-powered 3-pass pipeline (summarize → synthesize → context select)
+- `src/llm.ts` — Unified LLM client (Gemini native SDK, OpenAI/OpenRouter via OpenAI SDK)
+- `src/markdown.ts` — Serializers for wiki/static/context output formats
+
+**Entry points:**
+- `src/mcp.ts` — MCP server via `@modelcontextprotocol/sdk`, stdio transport
+- `src/cli.ts` — CLI via commander, with ora spinners and chalk output
 
 ## Build
 
-esbuild bundles everything to a single `dist/cli.cjs` file. `simple-git`, `@google/genai`, and `openai` are externalized (kept as runtime dependencies). The `.cjs` extension is required because `package.json` has `"type": "module"` but esbuild outputs CommonJS.
+esbuild bundles to `dist/cli.cjs` and `dist/mcp.cjs`. External: `simple-git`, `@google/genai`, `openai`, `@modelcontextprotocol/sdk`. The `.cjs` extension is required because `package.json` has `"type": "module"` but esbuild outputs CommonJS.
