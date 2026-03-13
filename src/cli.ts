@@ -15,12 +15,13 @@ program
   .description("Generate intelligent wiki documentation from any Git repo. Targeted context for LLMs — only the files that matter.")
   .version("1.0.0")
   .argument("<repo>", "GitHub URL or local directory path")
-  .option("-p, --provider <provider>", "LLM provider: gemini, openai, openrouter", "gemini")
+  .option("-p, --provider <provider>", "LLM provider: gemini, openai, openrouter, ollama", "gemini")
   .option("-k, --key <key>", "API key (or set OPENCODEWIKI_API_KEY env var)")
   .option("-o, --output <path>", "Output file path (default: stdout)")
   .option("--json", "Output raw JSON instead of markdown")
   .option("-c, --context <task>", "Context selection mode: describe the task to get only relevant files")
   .option("-n, --top <number>", "Number of top files to include in static mode", "30")
+  .option("-m, --model <model>", "Override model for both fast and strong passes (e.g. qwen3:14b)")
   .option("-s, --static", "Static analysis only — no LLM calls, no API key needed. Outputs scored files + contents.")
   .action(run);
 
@@ -32,6 +33,7 @@ async function run(repo: string, opts: {
   output?: string;
   json?: boolean;
   context?: string;
+  model?: string;
   static?: boolean;
   top?: string;
 }) {
@@ -87,16 +89,16 @@ async function run(repo: string, opts: {
       return;
     }
 
-    // === LLM modes require an API key ===
-    const apiKey = opts.key || process.env.CARTOGRAPH_API_KEY;
-    if (!apiKey) {
-      console.error(chalk.red("Error: API key required. Use --key, set CARTOGRAPH_API_KEY, or use --static for no-LLM mode."));
+    // === LLM modes require an API key (except Ollama) ===
+    const provider = opts.provider as ProviderId;
+    if (!PROVIDERS[provider]) {
+      console.error(chalk.red(`Error: Unknown provider "${provider}". Use: gemini, openai, openrouter, ollama`));
       process.exit(1);
     }
 
-    const provider = opts.provider as ProviderId;
-    if (!PROVIDERS[provider]) {
-      console.error(chalk.red(`Error: Unknown provider "${provider}". Use: gemini, openai, openrouter`));
+    const apiKey = opts.key || process.env.CARTOGRAPH_API_KEY || (provider === "ollama" ? "ollama" : "");
+    if (!apiKey) {
+      console.error(chalk.red("Error: API key required. Use --key, set CARTOGRAPH_API_KEY, use -p ollama for local, or --static for no-LLM mode."));
       process.exit(1);
     }
 
@@ -104,8 +106,8 @@ async function run(repo: string, opts: {
     const config: LLMConfig = {
       apiKey,
       provider,
-      fastModel: providerConfig.defaultFastModel,
-      strongModel: providerConfig.defaultStrongModel,
+      fastModel: opts.model || providerConfig.defaultFastModel,
+      strongModel: opts.model || providerConfig.defaultStrongModel,
     };
 
     // === Summarize ===

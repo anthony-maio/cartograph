@@ -23,8 +23,8 @@ export async function summarizeFiles(
   const topFiles = files.slice(0, 30);
   const total = topFiles.length;
 
-  // Batch size varies: Gemini has generous RPM, OpenAI/OpenRouter less so
-  const batchSize = config.provider === "gemini" ? 5 : 3;
+  // Batch size: Gemini has generous RPM, Ollama runs locally (sequential is fine), others are moderate
+  const batchSize = config.provider === "ollama" ? 1 : config.provider === "gemini" ? 5 : 3;
 
   for (let i = 0; i < topFiles.length; i += batchSize) {
     const batch = topFiles.slice(i, i + batchSize);
@@ -86,7 +86,7 @@ Respond in this exact JSON format (no markdown wrapping, just the raw JSON objec
 
     onProgress(Math.min(i + batchSize, total), total);
 
-    if (i + batchSize < topFiles.length) {
+    if (i + batchSize < topFiles.length && config.provider !== "ollama") {
       await delay(config.provider === "gemini" ? 800 : 1500);
     }
   }

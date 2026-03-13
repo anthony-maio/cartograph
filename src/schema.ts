@@ -50,6 +50,25 @@ export const PROVIDERS = {
       { id: "meta-llama/llama-4-maverick", name: "Llama 4 Maverick", tier: "strong" },
     ],
   },
+  ollama: {
+    id: "ollama",
+    name: "Ollama (Local)",
+    description: "Run models locally via Ollama. No API key needed.",
+    keyPlaceholder: "Not required",
+    keyUrl: "https://ollama.com",
+    defaultFastModel: "qwen3:8b",
+    defaultStrongModel: "qwen3:32b",
+    models: [
+      { id: "qwen3:8b", name: "Qwen 3 8B", tier: "fast" },
+      { id: "qwen3:32b", name: "Qwen 3 32B", tier: "strong" },
+      { id: "llama3.1:8b", name: "Llama 3.1 8B", tier: "fast" },
+      { id: "llama3.1:70b", name: "Llama 3.1 70B", tier: "strong" },
+      { id: "deepseek-r1:14b", name: "DeepSeek R1 14B", tier: "fast" },
+      { id: "deepseek-r1:32b", name: "DeepSeek R1 32B", tier: "strong" },
+      { id: "gemma3:12b", name: "Gemma 3 12B", tier: "fast" },
+      { id: "gemma3:27b", name: "Gemma 3 27B", tier: "strong" },
+    ],
+  },
 } as const;
 
 export type ProviderId = keyof typeof PROVIDERS;
@@ -59,7 +78,7 @@ export const analyzeRequestSchema = z.object({
   repoUrl: z.string().min(1, "Repository URL is required"),
   branch: z.string().optional(),
   apiKey: z.string().min(1, "API key is required"),
-  provider: z.enum(["gemini", "openai", "openrouter"]).default("gemini"),
+  provider: z.enum(["gemini", "openai", "openrouter", "ollama"]).default("gemini"),
   fastModel: z.string().optional(),
   strongModel: z.string().optional(),
 });
@@ -67,7 +86,7 @@ export const analyzeRequestSchema = z.object({
 export const contextRequestSchema = z.object({
   task: z.string().min(1, "Task description is required"),
   apiKey: z.string().min(1, "API key is required"),
-  provider: z.enum(["gemini", "openai", "openrouter"]).default("gemini"),
+  provider: z.enum(["gemini", "openai", "openrouter", "ollama"]).default("gemini"),
   fastModel: z.string().optional(),
 });
 

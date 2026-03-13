@@ -6,7 +6,7 @@ Intelligent codebase analysis for AI agents. Instead of dumping an entire repo, 
 
 **MCP Server** — Tools that AI agents (like Claude) call directly. No external LLM needed since the agent IS the LLM.
 
-**CLI** — Standalone tool with optional LLM-powered synthesis via Gemini, OpenAI, or OpenRouter.
+**CLI** — Standalone tool with optional LLM-powered synthesis via Gemini, OpenAI, OpenRouter, or Ollama (local).
 
 ## Install
 
@@ -47,6 +47,10 @@ cartograph ./my-project -p gemini -k $GEMINI_KEY -o wiki.md
 # Context selection — only files needed for a task
 cartograph ./my-project -c "add user authentication" -p gemini -k $KEY
 
+# Local LLM via Ollama — no API key needed
+cartograph ./my-project -p ollama
+cartograph ./my-project -p ollama -m llama3.1:8b
+
 # Remote repo
 cartograph https://github.com/expressjs/express --static
 ```
@@ -55,8 +59,9 @@ cartograph https://github.com/expressjs/express --static
 
 | Flag | Description |
 |------|-------------|
-| `-p, --provider` | LLM provider: `gemini` (default), `openai`, `openrouter` |
-| `-k, --key` | API key (or set `CARTOGRAPH_API_KEY` env var) |
+| `-p, --provider` | LLM provider: `gemini` (default), `openai`, `openrouter`, `ollama` |
+| `-k, --key` | API key (or set `CARTOGRAPH_API_KEY` env var). Not needed for Ollama. |
+| `-m, --model` | Override model for both passes (e.g. `qwen3:14b`, `gpt-4.1-nano`) |
 | `-o, --output` | Output file path (default: stdout) |
 | `-s, --static` | Static analysis only — no LLM, no API key needed |
 | `-c, --context` | Task description for context selection mode |

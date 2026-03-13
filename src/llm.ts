@@ -36,6 +36,8 @@ export function createLLMClient(config: LLMConfig): LLMClient {
       return new OpenAIClient(config.apiKey, "https://api.openai.com/v1");
     case "openrouter":
       return new OpenAIClient(config.apiKey, "https://openrouter.ai/api/v1");
+    case "ollama":
+      return new OpenAIClient(config.apiKey || "ollama", "http://localhost:11434/v1");
     default:
       throw new Error(`Unknown provider: ${config.provider}`);
   }
