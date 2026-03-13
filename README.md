@@ -1,12 +1,8 @@
 # Cartograph
 
-Intelligent codebase analysis for AI agents. Instead of dumping an entire repo, Cartograph scores files by importance, maps dependencies, and gives agents only what matters.
+Cartograph is a single-package repo analysis tool for coding agents. It ships a CLI, an MCP server, user-scope install adapters for Claude Code and OpenClaw, and packaged agent assets for documentation-heavy workflows.
 
-## Two Modes
-
-**MCP Server** — Tools that AI agents (like Claude) call directly. No external LLM needed since the agent IS the LLM.
-
-**CLI** — Standalone tool with optional LLM-powered synthesis via Gemini, OpenAI, OpenRouter, or Ollama (local).
+Instead of dumping an entire repository into context, Cartograph ranks the files that matter, maps dependencies, caches structured artifacts, and lets the next tool or agent pick up from those artifacts.
 
 ## Install
 
@@ -15,76 +11,140 @@ npm install
 npm run build
 ```
 
+For global use:
+
+```bash
+npm install -g cartograph
+```
+
+## Command Surface
+
+```bash
+cartograph analyze <repo> [options]
+cartograph context <repo> --task "<task>" [options]
+cartograph wiki <repo> [options]
+cartograph export <run-id> --to <path> [--artifact <name>]
+cartograph install <claude|openclaw|mcp>
+cartograph uninstall <claude|openclaw|mcp>
+cartograph doctor [target] [--json]
+cartograph mcp
+```
+
+Legacy compatibility still works:
+
+```bash
+cartograph <repo> --static
+cartograph <repo> -c "trace auth flow"
+```
+
+## CLI Usage
+
+```bash
+# Static analysis with ranked files and dependency data
+cartograph analyze ./my-project --static --json
+
+# Task-scoped context selection
+cartograph context ./my-project --task "add user authentication" --json
+
+# Full wiki output
+cartograph wiki ./my-project -p gemini -k $CARTOGRAPH_API_KEY -o wiki.md
+
+# Export a cached artifact to an explicit path
+cartograph export run-abc123 --to ./artifacts/wiki.md
+
+# Run the MCP server directly
+cartograph mcp
+```
+
+### Providers
+
+- `gemini`
+- `openai`
+- `openrouter`
+- `ollama`
+
+Set the API key with `--key` or `CARTOGRAPH_API_KEY`. Ollama does not require a key.
+
+## Cache Model
+
+Cartograph writes successful runs into the user cache by default:
+
+- Windows: `%USERPROFILE%\\.cartograph\\cache`
+- POSIX: `~/.cartograph/cache`
+
+Each run gets a manifest plus named artifacts, which keeps agent handoffs lightweight and makes `cartograph export` deterministic.
+
+## Host Installs
+
+Cartograph uses an explicit hybrid install model. Installing the package does not modify Claude Code, OpenClaw, or MCP host configs automatically.
+
+Instead, install only the integration you want:
+
+```bash
+cartograph install claude
+cartograph install openclaw
+cartograph install mcp
+```
+
+What each target installs:
+
+- `claude`: user-scope skill plus the bundled documentation agents under `~/.claude`
+- `openclaw`: user-scope skill pack under `~/.openclaw`
+- `mcp`: a Cartograph MCP config snippet under `~/.cartograph/mcp`
+
+Check status at any time:
+
+```bash
+cartograph doctor
+cartograph doctor --json
+```
+
 ## MCP Server
 
-Add to your Claude config (`~/.claude/claude_desktop_config.json`):
+Cartograph's MCP server exposes static repo analysis directly to hosts that prefer MCP over shell commands.
+
+Tools:
+
+- `analyze_repo`: score files, map dependencies, and return top file contents for a local repo or GitHub URL
+- `get_file_contents`: fetch full contents for specific files after analysis
+
+If you want Cartograph's packaged MCP snippet, run:
+
+```bash
+cartograph install mcp
+```
+
+That writes a reusable config file that points at:
 
 ```json
 {
   "mcpServers": {
     "cartograph": {
-      "command": "node",
-      "args": ["/path/to/cartograph/dist/mcp.cjs"]
+      "command": "cartograph",
+      "args": ["mcp"]
     }
   }
 }
 ```
 
-### Tools
+## Packaged Agent Assets
 
-- **`analyze_repo`** — Full static analysis: scored file list, dependency graph, top N file contents. Accepts a local path or GitHub URL.
-- **`get_file_contents`** — Read specific files from a repo. Use after `analyze_repo` to drill into files of interest.
+The package currently ships:
 
-## CLI Usage
+- a Claude skill for Cartograph-first repo survey
+- five Claude documentation agents: `repo-scout`, `dependency-tracer`, `context-picker`, `api-surface-writer`, and `wiki-writer`
+- an OpenClaw skill for the same CLI-first flow
+
+These assets are meant to pass run IDs and artifact paths between steps instead of copying large prose into the main context.
+
+## Development
 
 ```bash
-# Static mode — no LLM, no API key
-cartograph ./my-project --static -o analysis.md
-
-# Full LLM analysis
-cartograph ./my-project -p gemini -k $GEMINI_KEY -o wiki.md
-
-# Context selection — only files needed for a task
-cartograph ./my-project -c "add user authentication" -p gemini -k $KEY
-
-# Local LLM via Ollama — no API key needed
-cartograph ./my-project -p ollama
-cartograph ./my-project -p ollama -m llama3.1:8b
-
-# Remote repo
-cartograph https://github.com/expressjs/express --static
+npm install
+npm test
+npm run check
+npm run build
 ```
-
-### Options
-
-| Flag | Description |
-|------|-------------|
-| `-p, --provider` | LLM provider: `gemini` (default), `openai`, `openrouter`, `ollama` |
-| `-k, --key` | API key (or set `CARTOGRAPH_API_KEY` env var). Not needed for Ollama. |
-| `-m, --model` | Override model for both passes (e.g. `qwen3:14b`, `gpt-4.1-nano`) |
-| `-o, --output` | Output file path (default: stdout) |
-| `-s, --static` | Static analysis only — no LLM, no API key needed |
-| `-c, --context` | Task description for context selection mode |
-| `-n, --top` | Number of top files to include (default: 30) |
-| `--json` | Output raw JSON instead of markdown |
-
-## How It Works
-
-1. **Walk** the repo, extracting imports/exports via regex across 20+ languages
-2. **Score** each file by importance using heuristics:
-   - Entry points (`index.ts`, `main.py`, etc.) → +30
-   - README/docs → +40
-   - Config files → +20
-   - Fan-in (how many files import this one) → up to +50
-   - Export count → up to +20
-   - Root-level files → +10
-   - Test files → -20
-3. **Map** dependency edges between files
-4. **Return** scored file list, dependency graph, and top file contents
-
-In LLM mode (CLI only), two additional passes run:
-- **Summarize** — fast model summarizes top 30 files
-- **Synthesize** — strong model produces architecture overview, module docs, and context guides
 
 ## License
 

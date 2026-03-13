@@ -4,6 +4,11 @@
   "description": "MCP server + CLI for intelligent codebase analysis. Scores files by importance, maps dependencies, provides targeted context for AI agents.",
   "type": "module",
   "license": "MIT",
+  "files": [
+    "dist",
+    "assets",
+    "README.md"
+  ],
   "bin": {
     "cartograph": "./dist/cli.cjs"
   },
