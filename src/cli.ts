@@ -10,14 +10,11 @@ import { wikiToMarkdown, contextToMarkdown, staticToMarkdown } from "./markdown"
 import { createRunWorkspace, getCacheRoot, findRunDirectory, loadRunManifest } from "./app/cache";
 import { exportRunArtifact, writeRunArtifact } from "./app/artifacts";
 import { estimateContextTokens, hydrateContextFiles } from "./app/context";
+import { handleInstallCommand } from "./app/commands/install";
+import { handleUninstallCommand } from "./app/commands/uninstall";
+import { handleDoctorCommand } from "./app/commands/doctor";
 
 const program = new Command();
-const placeholderCommandNames = [
-  "install",
-  "uninstall",
-  "doctor",
-  "mcp",
-] as const;
 
 program.enablePositionalOptions();
 
@@ -81,31 +78,30 @@ program
   .option("-a, --artifact <name>", "Artifact name to export when the run contains multiple artifacts")
   .action(handleExportCommand);
 
-for (const name of placeholderCommandNames) {
-  program
-    .command(name)
-    .description(getPlaceholderDescription(name))
-    .allowUnknownOption()
-    .action(() => {
-      console.error(chalk.yellow(`The '${name}' command is planned but not implemented yet in this branch.`));
-      process.exit(1);
-    });
-}
+program
+  .command("install [target]")
+  .description("Install Cartograph assets for a supported host.")
+  .action(handleInstallCommand);
+
+program
+  .command("uninstall [target]")
+  .description("Remove Cartograph assets for a supported host.")
+  .action(handleUninstallCommand);
+
+program
+  .command("doctor [target]")
+  .description("Inspect Cartograph installation health and host integration status.")
+  .option("--json", "Output machine-readable JSON")
+  .action(handleDoctorCommand);
+
+program
+  .command("mcp")
+  .description("Run Cartograph in MCP server mode.")
+  .action(async () => {
+    await import("./mcp");
+  });
 
 program.parse();
-
-function getPlaceholderDescription(commandName: (typeof placeholderCommandNames)[number]): string {
-  switch (commandName) {
-    case "install":
-      return "Install Cartograph assets for a supported host.";
-    case "uninstall":
-      return "Remove Cartograph assets for a supported host.";
-    case "doctor":
-      return "Inspect Cartograph installation health and host integration status.";
-    case "mcp":
-      return "Run Cartograph in MCP server mode.";
-  }
-}
 
 function addAnalysisOptions<T extends Command>(command: T): T {
   return command
