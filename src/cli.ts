@@ -7,18 +7,18 @@ import { PROVIDERS, type ProviderId, type LLMConfig } from "./schema";
 import { cloneRepo, cleanupRepo, analyzeFiles, getFileContent } from "./analyzer";
 import { summarizeFiles, synthesizeWiki, selectContext } from "./pipeline";
 import { wikiToMarkdown, contextToMarkdown, staticToMarkdown } from "./markdown";
+import { getCacheRoot, findRunDirectory, loadRunManifest } from "./app/cache";
+import { exportRunArtifact } from "./app/artifacts";
 
 const program = new Command();
 const placeholderCommandNames = [
-  "analyze",
-  "context",
-  "wiki",
   "install",
   "uninstall",
   "doctor",
-  "export",
   "mcp",
 ] as const;
+
+program.enablePositionalOptions();
 
 program
   .name("cartograph")
@@ -42,6 +42,43 @@ program
     return run(repo, opts);
   });
 
+addAnalysisOptions(
+  program
+    .command("analyze <repo>")
+    .description("Analyze a repository and return ranked files and dependency data."),
+).action((repo, opts) => run(repo, opts));
+
+addAnalysisOptions(
+  program
+    .command("wiki <repo>")
+    .description("Generate a repository wiki or static markdown summary."),
+).action((repo, opts) => run(repo, opts));
+
+addAnalysisOptions(
+  program
+    .command("context <repo>")
+    .description("Select the minimal context needed for a specific development task.")
+    .requiredOption("-t, --task <task>", "Task description used for context selection"),
+).action((repo, opts) => {
+  return run(repo, {
+    provider: opts.provider,
+    key: opts.key,
+    output: opts.output,
+    json: opts.json,
+    context: opts.task,
+    model: opts.model,
+    static: opts.static,
+    top: opts.top,
+  });
+});
+
+program
+  .command("export <runId>")
+  .description("Export cached run artifacts to an explicit destination path.")
+  .requiredOption("--to <path>", "Destination path for the exported artifact")
+  .option("-a, --artifact <name>", "Artifact name to export when the run contains multiple artifacts")
+  .action(handleExportCommand);
+
 for (const name of placeholderCommandNames) {
   program
     .command(name)
@@ -57,22 +94,51 @@ program.parse();
 
 function getPlaceholderDescription(commandName: (typeof placeholderCommandNames)[number]): string {
   switch (commandName) {
-    case "analyze":
-      return "Analyze a repository and return ranked files and dependency data.";
-    case "context":
-      return "Select the minimal context needed for a specific development task.";
-    case "wiki":
-      return "Generate a repository wiki or static markdown summary.";
     case "install":
       return "Install Cartograph assets for a supported host.";
     case "uninstall":
       return "Remove Cartograph assets for a supported host.";
     case "doctor":
       return "Inspect Cartograph installation health and host integration status.";
-    case "export":
-      return "Export cached run artifacts to an explicit destination path.";
     case "mcp":
       return "Run Cartograph in MCP server mode.";
+  }
+}
+
+function addAnalysisOptions<T extends Command>(command: T): T {
+  return command
+    .option("-p, --provider <provider>", "LLM provider: gemini, openai, openrouter, ollama", "gemini")
+    .option("-k, --key <key>", "API key (or set CARTOGRAPH_API_KEY env var)")
+    .option("-o, --output <path>", "Output file path (default: stdout)")
+    .option("--json", "Output raw JSON instead of markdown")
+    .option("-n, --top <number>", "Number of top files to include in static mode", "30")
+    .option("-m, --model <model>", "Override model for both fast and strong passes (e.g. qwen3:14b)")
+    .option("-s, --static", "Static analysis only — no LLM calls, no API key needed. Outputs scored files + contents.");
+}
+
+function handleExportCommand(runId: string, opts: { artifact?: string; to: string }) {
+  try {
+    const runDir = findRunDirectory(runId, getCacheRoot());
+    if (!runDir) {
+      throw new Error(`Run '${runId}' was not found in the Cartograph cache.`);
+    }
+
+    let artifactName = opts.artifact;
+    if (!artifactName) {
+      const manifest = loadRunManifest(runDir);
+      const artifactNames = Object.keys(manifest.artifacts);
+      if (artifactNames.length !== 1) {
+        throw new Error("Export requires --artifact when the run has multiple artifacts.");
+      }
+
+      artifactName = artifactNames[0];
+    }
+
+    const exportedPath = exportRunArtifact(runDir, artifactName, opts.to);
+    console.error(chalk.green(`Exported '${artifactName}' to ${exportedPath}`));
+  } catch (err: any) {
+    console.error(chalk.red(err.message || String(err)));
+    process.exit(1);
   }
 }
 

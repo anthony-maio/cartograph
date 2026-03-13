@@ -12,11 +12,15 @@ export interface CliRunResult {
   stderr: string;
 }
 
-export function runCli(args: string[]): Promise<CliRunResult> {
+export function runCli(args: string[], env: NodeJS.ProcessEnv = {}): Promise<CliRunResult> {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, ["--import", "tsx", cliPath, ...args], {
       cwd: repoRoot,
       stdio: ["ignore", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        ...env,
+      },
     });
 
     let stdout = "";

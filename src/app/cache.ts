@@ -82,6 +82,26 @@ export function loadRunManifest(runDir: string): RunManifest {
   return JSON.parse(raw) as RunManifest;
 }
 
+export function findRunDirectory(runId: string, cacheRoot: string = getCacheRoot()): string | null {
+  const resolvedCacheRoot = path.resolve(cacheRoot);
+  if (!fs.existsSync(resolvedCacheRoot)) {
+    return null;
+  }
+
+  for (const entry of fs.readdirSync(resolvedCacheRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+
+    const runDir = path.join(resolvedCacheRoot, entry.name, runId);
+    if (fs.existsSync(path.join(runDir, "manifest.json"))) {
+      return runDir;
+    }
+  }
+
+  return null;
+}
+
 export function saveRunManifest(runDir: string, manifest: RunManifest): void {
   const manifestPath = path.join(runDir, "manifest.json");
   writeManifest(manifestPath, manifest);
