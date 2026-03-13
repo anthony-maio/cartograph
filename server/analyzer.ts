@@ -1,5 +1,6 @@
 import simpleGit from "simple-git";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import type { FileNode, DependencyEdge } from "@shared/schema";
 
@@ -124,7 +125,7 @@ const CONFIG_PATTERNS = [
 ];
 
 export async function cloneRepo(repoUrl: string, branch?: string): Promise<string> {
-  const tmpDir = path.join("/tmp", `opencodewiki-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const tmpDir = path.join(os.tmpdir(), `opencodewiki-${Date.now()}-${Math.random().toString(36).slice(2)}`);
   fs.mkdirSync(tmpDir, { recursive: true });
 
   const git = simpleGit();

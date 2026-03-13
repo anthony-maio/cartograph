@@ -1,9 +1,0 @@
-[build]
-builder = "dockerfile"
-dockerfilePath = "Dockerfile"
-
-[deploy]
-startCommand = "npm run start"
-healthcheckPath = "/api/providers"
-restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3

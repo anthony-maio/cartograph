@@ -6,16 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 OpenCodeWiki is a smarter alternative to gitingest. Instead of dumping an entire codebase into an LLM, it scores files by importance (entry points, fan-in, exports) and runs a 3-pass analysis pipeline to produce structured architecture documentation and a "Context Builder" that selects only the files an LLM needs for a given task.
 
-## Commands
+## Running Locally
 
 ```bash
-npm run dev          # Start dev server (Express + Vite HMR) on port 5000
-npm run build        # Build client (Vite) + server (esbuild) to dist/
-npm run start        # Run production build from dist/index.cjs
+npm install          # Install dependencies (first time)
+npm run dev          # Start dev server (Express + Vite HMR) on http://localhost:5000
 npm run check        # TypeScript type-check (no emit)
 ```
 
-No test framework is configured.
+Requires git on PATH (the app clones repos to analyze). No test framework is configured.
 
 ## Architecture
 
