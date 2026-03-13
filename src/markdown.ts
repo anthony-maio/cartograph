@@ -1,4 +1,4 @@
-import type { WikiResult, FileSummary } from "./schema";
+import type { WikiResult, FileSummary, FileNode, DependencyEdge } from "./schema";
 
 export function wikiToMarkdown(wiki: WikiResult): string {
   const lines: string[] = [];
@@ -49,6 +49,73 @@ export function wikiToMarkdown(wiki: WikiResult): string {
       lines.push(guide.explanation);
       lines.push("");
     }
+  }
+
+  return lines.join("\n");
+}
+
+export function staticToMarkdown(
+  repoName: string,
+  files: FileNode[],
+  edges: DependencyEdge[],
+  fileContents: Map<string, string>,
+): string {
+  const lines: string[] = [];
+  const totalTokens = Array.from(fileContents.values()).reduce((acc, c) => acc + Math.ceil(c.length / 4), 0);
+
+  lines.push(`# ${repoName}`);
+  lines.push("");
+  lines.push(`> ${files.length} files analyzed, ${edges.length} dependency edges, ~${totalTokens.toLocaleString()} tokens of context below`);
+  lines.push("");
+
+  // Language breakdown
+  const langCounts: Record<string, number> = {};
+  for (const f of files) {
+    langCounts[f.language] = (langCounts[f.language] || 0) + 1;
+  }
+  lines.push("## Languages");
+  lines.push("");
+  for (const [lang, count] of Object.entries(langCounts).sort((a, b) => b[1] - a[1])) {
+    lines.push(`- ${lang}: ${count} files`);
+  }
+  lines.push("");
+
+  // Scored file list
+  lines.push("## Files by Importance");
+  lines.push("");
+  lines.push("| Score | File | Language | Lines | Exports |");
+  lines.push("|-------|------|----------|-------|---------|");
+  for (const f of files.slice(0, 50)) {
+    lines.push(`| ${f.importanceScore} | \`${f.path}\` | ${f.language} | ${f.lines} | ${f.exports.length} |`);
+  }
+  lines.push("");
+
+  // Key dependency edges
+  if (edges.length > 0) {
+    lines.push("## Key Dependencies");
+    lines.push("");
+    for (const e of edges.slice(0, 50)) {
+      lines.push(`- \`${e.from}\` → \`${e.to}\``);
+    }
+    lines.push("");
+  }
+
+  // File contents
+  lines.push("## File Contents");
+  lines.push("");
+  for (const [filePath, content] of fileContents) {
+    const file = files.find(f => f.path === filePath);
+    const ext = filePath.split(".").pop() || "";
+    lines.push(`### ${filePath}`);
+    lines.push("");
+    if (file) {
+      lines.push(`Score: ${file.importanceScore} | ${file.language} | ${file.lines} lines | Exports: ${file.exports.join(", ") || "none"}`);
+      lines.push("");
+    }
+    lines.push("```" + ext);
+    lines.push(content);
+    lines.push("```");
+    lines.push("");
   }
 
   return lines.join("\n");
