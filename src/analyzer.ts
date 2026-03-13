@@ -2,7 +2,7 @@ import simpleGit from "simple-git";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import type { FileNode, DependencyEdge } from "@shared/schema";
+import type { FileNode, DependencyEdge } from "./schema";
 
 // Language detection by extension
 const LANG_MAP: Record<string, string> = {

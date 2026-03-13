@@ -2,7 +2,7 @@
  * 3-pass analysis pipeline.
  * Provider-agnostic — uses the LLM client abstraction from llm.ts.
  */
-import type { FileNode, FileSummary, ModuleDoc, ContextGuide, WikiResult, DependencyEdge, LLMConfig } from "@shared/schema";
+import type { FileNode, FileSummary, ModuleDoc, ContextGuide, WikiResult, DependencyEdge, LLMConfig } from "./schema";
 import { createLLMClient, type LLMClient } from "./llm";
 
 async function delay(ms: number): Promise<void> {

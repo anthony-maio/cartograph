@@ -10,7 +10,7 @@
  */
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
-import type { LLMConfig, ProviderId } from "@shared/schema";
+import type { LLMConfig, ProviderId } from "./schema";
 
 // ---------------------------------------------------------------------------
 // Public interface
