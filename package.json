@@ -13,7 +13,9 @@
     "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs --banner:js=\"#!/usr/bin/env node\" --external:simple-git --external:@google/genai --external:openai && esbuild src/mcp.ts --bundle --platform=node --format=cjs --outfile=dist/mcp.cjs --external:simple-git --external:@google/genai --external:openai --external:@modelcontextprotocol/sdk",
     "start": "node dist/cli.cjs",
     "start:mcp": "node dist/mcp.cjs",
-    "check": "tsc"
+    "check": "tsc",
+    "test": "node --import tsx --test",
+    "test:watch": "node --import tsx --test --watch"
   },
   "dependencies": {
     "@google/genai": "^1.44.0",

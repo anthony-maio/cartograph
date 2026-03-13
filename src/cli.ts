@@ -9,23 +9,72 @@ import { summarizeFiles, synthesizeWiki, selectContext } from "./pipeline";
 import { wikiToMarkdown, contextToMarkdown, staticToMarkdown } from "./markdown";
 
 const program = new Command();
+const placeholderCommandNames = [
+  "analyze",
+  "context",
+  "wiki",
+  "install",
+  "uninstall",
+  "doctor",
+  "export",
+  "mcp",
+] as const;
 
 program
   .name("cartograph")
   .description("Generate intelligent wiki documentation from any Git repo. Targeted context for LLMs — only the files that matter.")
   .version("1.0.0")
-  .argument("<repo>", "GitHub URL or local directory path")
+  .argument("[repo]", "GitHub URL or local directory path")
   .option("-p, --provider <provider>", "LLM provider: gemini, openai, openrouter, ollama", "gemini")
-  .option("-k, --key <key>", "API key (or set OPENCODEWIKI_API_KEY env var)")
+  .option("-k, --key <key>", "API key (or set CARTOGRAPH_API_KEY env var)")
   .option("-o, --output <path>", "Output file path (default: stdout)")
   .option("--json", "Output raw JSON instead of markdown")
   .option("-c, --context <task>", "Context selection mode: describe the task to get only relevant files")
   .option("-n, --top <number>", "Number of top files to include in static mode", "30")
   .option("-m, --model <model>", "Override model for both fast and strong passes (e.g. qwen3:14b)")
   .option("-s, --static", "Static analysis only — no LLM calls, no API key needed. Outputs scored files + contents.")
-  .action(run);
+  .action((repo, opts) => {
+    if (!repo) {
+      program.outputHelp();
+      return;
+    }
+
+    return run(repo, opts);
+  });
+
+for (const name of placeholderCommandNames) {
+  program
+    .command(name)
+    .description(getPlaceholderDescription(name))
+    .allowUnknownOption()
+    .action(() => {
+      console.error(chalk.yellow(`The '${name}' command is planned but not implemented yet in this branch.`));
+      process.exit(1);
+    });
+}
 
 program.parse();
+
+function getPlaceholderDescription(commandName: (typeof placeholderCommandNames)[number]): string {
+  switch (commandName) {
+    case "analyze":
+      return "Analyze a repository and return ranked files and dependency data.";
+    case "context":
+      return "Select the minimal context needed for a specific development task.";
+    case "wiki":
+      return "Generate a repository wiki or static markdown summary.";
+    case "install":
+      return "Install Cartograph assets for a supported host.";
+    case "uninstall":
+      return "Remove Cartograph assets for a supported host.";
+    case "doctor":
+      return "Inspect Cartograph installation health and host integration status.";
+    case "export":
+      return "Export cached run artifacts to an explicit destination path.";
+    case "mcp":
+      return "Run Cartograph in MCP server mode.";
+  }
+}
 
 async function run(repo: string, opts: {
   provider: string;
