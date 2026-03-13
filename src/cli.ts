@@ -7,8 +7,9 @@ import { PROVIDERS, type ProviderId, type LLMConfig } from "./schema";
 import { cloneRepo, cleanupRepo, analyzeFiles, getFileContent } from "./analyzer";
 import { summarizeFiles, synthesizeWiki, selectContext } from "./pipeline";
 import { wikiToMarkdown, contextToMarkdown, staticToMarkdown } from "./markdown";
-import { getCacheRoot, findRunDirectory, loadRunManifest } from "./app/cache";
-import { exportRunArtifact } from "./app/artifacts";
+import { createRunWorkspace, getCacheRoot, findRunDirectory, loadRunManifest } from "./app/cache";
+import { exportRunArtifact, writeRunArtifact } from "./app/artifacts";
+import { estimateContextTokens, hydrateContextFiles } from "./app/context";
 
 const program = new Command();
 const placeholderCommandNames = [
@@ -46,13 +47,13 @@ addAnalysisOptions(
   program
     .command("analyze <repo>")
     .description("Analyze a repository and return ranked files and dependency data."),
-).action((repo, opts) => run(repo, opts));
+).action((repo, opts) => run(repo, { ...opts, command: "analyze" }));
 
 addAnalysisOptions(
   program
     .command("wiki <repo>")
     .description("Generate a repository wiki or static markdown summary."),
-).action((repo, opts) => run(repo, opts));
+).action((repo, opts) => run(repo, { ...opts, command: "wiki" }));
 
 addAnalysisOptions(
   program
@@ -69,6 +70,7 @@ addAnalysisOptions(
     model: opts.model,
     static: opts.static,
     top: opts.top,
+    command: "context",
   });
 });
 
@@ -151,6 +153,7 @@ async function run(repo: string, opts: {
   model?: string;
   static?: boolean;
   top?: string;
+  command?: "analyze" | "context" | "wiki";
 }) {
   // Determine if repo is local or remote
   const isLocal = fs.existsSync(repo);
@@ -185,6 +188,8 @@ async function run(repo: string, opts: {
     const repoName = isLocal
       ? path.basename(path.resolve(repo))
       : repo.split("/").slice(-2).join("/").replace(".git", "").replace(/\/$/, "");
+    const repoId = isLocal ? repoDir : repo;
+    const commandName = opts.command ?? (opts.context ? "context" : opts.static ? "analyze" : "wiki");
 
     // Read file contents for top files
     const topFiles = files.slice(0, topN);
@@ -201,6 +206,7 @@ async function run(repo: string, opts: {
         : staticToMarkdown(repoName, files, edges, fileContents);
 
       writeOutput(output, opts.output);
+      cacheRunOutput(repoId, commandName, "analysis", opts.json ? "json" : "md", output);
       return;
     }
 
@@ -240,13 +246,16 @@ async function run(repo: string, opts: {
 
       spinner.start(`Selecting files for: "${opts.context}"...`);
       const result = await selectContext(config, opts.context, wiki, summaries, fileContents);
-      spinner.succeed(`Selected ${result.files.length} files (~${result.totalTokens.toLocaleString()} tokens)`);
+      const hydratedFiles = hydrateContextFiles(repoDir, result.files, fileContents);
+      const totalTokens = estimateContextTokens(hydratedFiles);
+      spinner.succeed(`Selected ${hydratedFiles.length} files (~${totalTokens.toLocaleString()} tokens)`);
 
       const output = opts.json
-        ? JSON.stringify(result, null, 2)
-        : contextToMarkdown(opts.context, result.files, result.totalTokens);
+        ? JSON.stringify({ files: hydratedFiles, totalTokens }, null, 2)
+        : contextToMarkdown(opts.context, hydratedFiles, totalTokens);
 
       writeOutput(output, opts.output);
+      cacheRunOutput(repoId, commandName, "task-context", opts.json ? "json" : "md", output);
       return;
     }
 
@@ -260,6 +269,7 @@ async function run(repo: string, opts: {
       : wikiToMarkdown(wiki);
 
     writeOutput(output, opts.output);
+    cacheRunOutput(repoId, commandName, "wiki", opts.json ? "json" : "md", output);
 
   } catch (err: any) {
     spinner.fail(chalk.red(err.message || String(err)));
@@ -278,4 +288,20 @@ function writeOutput(content: string, outputPath?: string) {
   } else {
     process.stdout.write(content);
   }
+}
+
+function cacheRunOutput(
+  repo: string,
+  command: "analyze" | "context" | "wiki",
+  artifactName: string,
+  extension: "json" | "md",
+  content: string,
+) {
+  const workspace = createRunWorkspace({ repo, command });
+  writeRunArtifact(workspace.runDir, {
+    name: artifactName,
+    extension,
+    content,
+  });
+  console.error(chalk.gray(`Cached run ${workspace.runId} in ${workspace.runDir}`));
 }

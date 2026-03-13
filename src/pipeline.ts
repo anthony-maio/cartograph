@@ -4,6 +4,7 @@
  */
 import type { FileNode, FileSummary, ModuleDoc, ContextGuide, WikiResult, DependencyEdge, LLMConfig } from "./schema";
 import { createLLMClient, type LLMClient } from "./llm";
+import type { SelectedContextFile } from "./app/context";
 
 async function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -211,7 +212,7 @@ export async function selectContext(
   wiki: WikiResult,
   summaries: FileSummary[],
   fileContents: Map<string, string>,
-): Promise<{ files: Array<{ path: string; reason: string; content: string }>; totalTokens: number }> {
+): Promise<{ files: SelectedContextFile[] }> {
   const client = createLLMClient(config);
 
   const summaryText = summaries.map(s =>
@@ -262,20 +263,13 @@ Respond in JSON (no markdown wrapping, just the raw JSON object):
 
     const parsed = JSON.parse(text);
 
-    const selectedFiles = (parsed.files || []).map((f: any) => {
-      const content = fileContents.get(f.path) || "";
-      return {
-        path: f.path,
-        reason: f.reason,
-        content,
-      };
-    }).filter((f: any) => f.content);
+    const selectedFiles: SelectedContextFile[] = (parsed.files || []).map((f: any) => ({
+      path: f.path,
+      reason: f.reason,
+      content: fileContents.get(f.path) || "",
+    }));
 
-    const totalTokens = selectedFiles.reduce(
-      (acc: number, f: any) => acc + Math.ceil(f.content.length / 4), 0
-    );
-
-    return { files: selectedFiles, totalTokens };
+    return { files: selectedFiles };
   } catch (err) {
     console.error("Error in context selection:", err);
     throw new Error(`Context selection failed: ${err}`);
