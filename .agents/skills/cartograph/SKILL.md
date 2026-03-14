@@ -13,5 +13,6 @@ Recommended sequence:
 Guidelines:
 - Prefer Cartograph artifacts over manual wide-file reads.
 - Treat cached run IDs as handoff points between agents or workflow steps.
+- If OpenProse is available, keep reusable workflows next to this skill and start from those templates.
 - Export artifacts only when a user needs a concrete file path.
 - If Cartograph is unavailable, fall back to a manual repo survey.

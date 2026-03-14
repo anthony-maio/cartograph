@@ -32,6 +32,7 @@ test("install command writes user-scope assets for claude, openclaw, and mcp", a
     assert.ok(fs.existsSync(path.join(env.CARTOGRAPH_CLAUDE_HOME, "skills", "cartograph", "SKILL.md")));
     assert.ok(fs.existsSync(path.join(env.CARTOGRAPH_CLAUDE_HOME, "agents", "repo-scout.md")));
     assert.ok(fs.existsSync(path.join(env.CARTOGRAPH_OPENCLAW_HOME, "skills", "cartograph", "SKILL.md")));
+    assert.ok(fs.existsSync(path.join(env.CARTOGRAPH_OPENCLAW_HOME, "skills", "cartograph", "openprose", "repo-docs.prose")));
     assert.ok(fs.existsSync(path.join(env.CARTOGRAPH_MCP_HOME, "cartograph-mcp.json")));
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });

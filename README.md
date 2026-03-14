@@ -134,6 +134,7 @@ The package currently ships:
 - a Claude skill for Cartograph-first repo survey
 - five Claude documentation agents: `repo-scout`, `dependency-tracer`, `context-picker`, `api-surface-writer`, and `wiki-writer`
 - an OpenClaw skill for the same CLI-first flow
+- bundled OpenProse templates inside the OpenClaw skill for repo-doc and task-context workflows
 
 These assets are meant to pass run IDs and artifact paths between steps instead of copying large prose into the main context.
 

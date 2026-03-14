@@ -1,0 +1,18 @@
+# Cartograph Task Context
+
+Goal: prepare a minimal engineering context packet for a concrete task.
+
+Inputs:
+- repository path or URL
+- task description
+
+Workflow:
+1. Run `cartograph context <repo> --task "<task>" --json`.
+2. Check that the selected files cover the change surface, types, and wiring boundaries.
+3. Add only the smallest number of extra files needed to remove ambiguity.
+4. Return the final working set and why each file matters.
+
+Outputs:
+- task-scoped file list
+- reasons for each file
+- missing context notes
