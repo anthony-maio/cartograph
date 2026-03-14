@@ -272,8 +272,10 @@ git commit -m "feat(adapters): add install and doctor commands"
 
 **Files:**
 - Modify: `README.md`
-- Modify: `.claude/skills/cartograph/SKILL.md`
-- Modify: `.agents/skills/cartograph/SKILL.md`
+- Modify: `.claude/skills/use-cartograph/SKILL.md`
+- Modify: `.claude/skills/repo-surveyor/SKILL.md`
+- Modify: `.agents/skills/use-cartograph/SKILL.md`
+- Modify: `.agents/skills/repo-surveyor/SKILL.md`
 - Modify: `package.json`
 - Create: `tests/cli/readme-surface.test.ts`
 
@@ -300,7 +302,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add README.md .claude/skills/cartograph/SKILL.md .agents/skills/cartograph/SKILL.md package.json tests/cli/readme-surface.test.ts
+git add README.md .claude/skills/use-cartograph/SKILL.md .claude/skills/repo-surveyor/SKILL.md .agents/skills/use-cartograph/SKILL.md .agents/skills/repo-surveyor/SKILL.md package.json tests/cli/readme-surface.test.ts
 git commit -m "docs(package): align skills and cli guidance"
 ```
 
