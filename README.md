@@ -11,6 +11,12 @@ npm install
 npm run build
 ```
 
+For global use from npm:
+
+```bash
+npm install -g @anthony-maio/cartograph
+```
+
 For global use from a local checkout:
 
 ```bash

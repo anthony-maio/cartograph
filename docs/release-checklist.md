@@ -14,9 +14,9 @@ Use this checklist before tagging or publishing a Cartograph release.
 
 ## Publishing Decision
 
-- Choose the registry package name before the first npm publish
-- Current blocker as of 2026-03-14: npm already has an unrelated `cartograph` package (`0.1.7`)
-- Preferred resolution: publish under a scoped name such as `@anthony-maio/cartograph` or rename the public package
+- Registry package name selected: `@anthony-maio/cartograph`
+- Keep the executable name as `cartograph`
+- Publish with public access enabled in `package.json`
 
 ## Docs and Community
 

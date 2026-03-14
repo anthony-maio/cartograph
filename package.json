@@ -1,5 +1,5 @@
 {
-  "name": "cartograph",
+  "name": "@anthony-maio/cartograph",
   "version": "1.0.0",
   "description": "MCP server + CLI for intelligent codebase analysis. Scores files by importance, maps dependencies, provides targeted context for AI agents.",
   "type": "module",
@@ -21,6 +21,9 @@
   ],
   "engines": {
     "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "license": "MIT",
   "files": [

@@ -85,7 +85,7 @@ This keeps one package for users and clean internal boundaries for implementatio
 
 Cartograph will use a hybrid install model.
 
-- `npm install -g cartograph` or equivalent installs the package only.
+- `npm install -g @anthony-maio/cartograph` or equivalent installs the package only.
 - Host integration is explicit.
 - The default install scope is user-level, not project-level.
 
