@@ -41,7 +41,8 @@ test("doctor reports installed and missing adapter assets", async () => {
     const openclaw = report.adapters.find((adapter) => adapter.id === "openclaw");
 
     assert.equal(claude?.installed, true);
-    assert.ok(claude?.assets.some((asset) => asset.label === "skill:cartograph" && asset.exists));
+    assert.ok(claude?.assets.some((asset) => asset.label === "skill:use-cartograph" && asset.exists));
+    assert.ok(claude?.assets.some((asset) => asset.label === "skill:repo-surveyor" && asset.exists));
     assert.equal(openclaw?.installed, false);
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });

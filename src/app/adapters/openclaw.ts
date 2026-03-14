@@ -12,6 +12,10 @@ import {
 } from "./types";
 
 const PACKAGE_ROOT = getPackageRoot();
+const SKILL_NAMES = [
+  "use-cartograph",
+  "repo-surveyor",
+] as const;
 
 export const openclawAdapter: AdapterManifest = {
   id: "openclaw",
@@ -32,12 +36,12 @@ export const openclawAdapter: AdapterManifest = {
     const targetRoot = this.resolveTargetRoot(ctx.env);
 
     return [
-      {
-        label: "skill:cartograph",
+      ...SKILL_NAMES.map((name) => ({
+        label: `skill:${name}`,
         kind: "directory" as const,
-        sourcePath: path.join(packageRoot, "assets", "openclaw", "skills", "cartograph"),
-        targetPath: path.join(targetRoot, "skills", "cartograph"),
-      },
+        sourcePath: path.join(packageRoot, "assets", "openclaw", "skills", name),
+        targetPath: path.join(targetRoot, "skills", name),
+      })),
     ];
   },
 

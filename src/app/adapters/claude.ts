@@ -19,6 +19,10 @@ const AGENT_NAMES = [
   "api-surface-writer",
   "wiki-writer",
 ] as const;
+const SKILL_NAMES = [
+  "use-cartograph",
+  "repo-surveyor",
+] as const;
 
 export const claudeAdapter: AdapterManifest = {
   id: "claude",
@@ -39,12 +43,12 @@ export const claudeAdapter: AdapterManifest = {
     const targetRoot = this.resolveTargetRoot(ctx.env);
 
     return [
-      {
-        label: "skill:cartograph",
+      ...SKILL_NAMES.map((name) => ({
+        label: `skill:${name}`,
         kind: "directory" as const,
-        sourcePath: path.join(packageRoot, "assets", "claude", "skills", "cartograph"),
-        targetPath: path.join(targetRoot, "skills", "cartograph"),
-      },
+        sourcePath: path.join(packageRoot, "assets", "claude", "skills", name),
+        targetPath: path.join(targetRoot, "skills", name),
+      })),
       ...AGENT_NAMES.map((name) => ({
         label: `agent:${name}`,
         kind: "file" as const,

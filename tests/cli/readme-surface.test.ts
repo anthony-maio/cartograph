@@ -22,6 +22,8 @@ test("README and CLI help describe the packaged command surface", async () => {
     "cartograph install <claude|openclaw|mcp>",
     "cartograph doctor [target] [--json]",
     "CARTOGRAPH_API_KEY",
+    "use-cartograph",
+    "repo-surveyor",
   ]) {
     assert.match(readme, new RegExp(escapeForRegExp(fragment)));
   }

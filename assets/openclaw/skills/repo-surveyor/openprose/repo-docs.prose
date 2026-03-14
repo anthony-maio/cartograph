@@ -1,0 +1,15 @@
+# Repo Surveyor: Repo Docs
+
+Goal: produce a compact architecture and onboarding draft when Cartograph is unavailable.
+
+Required output contract:
+- key files
+- dependency hubs
+- minimal task context
+- doc-ready summary
+
+Workflow:
+1. Discover entry points, config, README, and likely module hubs.
+2. Rank files by fan-in, exported API surface, and wiring role.
+3. Read only the highest-value files needed to explain the repository.
+4. Draft the final documentation from that reduced set.

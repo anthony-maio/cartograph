@@ -1,0 +1,15 @@
+# Repo Surveyor: Task Context
+
+Goal: prepare a minimal engineering context packet manually when Cartograph is unavailable.
+
+Required output contract:
+- key files
+- dependency hubs
+- minimal task context
+- doc-ready summary
+
+Workflow:
+1. Identify the entry point, interface files, and dependency hubs closest to the task.
+2. Read only the files needed to understand the change surface.
+3. Add at most a few extra files for types or wiring.
+4. Return the smallest useful working set and the summary another agent can use.

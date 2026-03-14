@@ -88,7 +88,7 @@ cartograph install mcp
 
 What each target installs:
 
-- `claude`: user-scope skill plus the bundled documentation agents under `~/.claude`
+- `claude`: user-scope skills plus the bundled documentation agents under `~/.claude`
 - `openclaw`: user-scope skill pack under `~/.openclaw`
 - `mcp`: a Cartograph MCP config snippet under `~/.cartograph/mcp`
 
@@ -131,10 +131,22 @@ That writes a reusable config file that points at:
 
 The package currently ships:
 
-- a Claude skill for Cartograph-first repo survey
+- two Claude skills: `use-cartograph` and `repo-surveyor`
 - five Claude documentation agents: `repo-scout`, `dependency-tracer`, `context-picker`, `api-surface-writer`, and `wiki-writer`
-- an OpenClaw skill for the same CLI-first flow
-- bundled OpenProse templates inside the OpenClaw skill for repo-doc and task-context workflows
+- two OpenClaw skills: `use-cartograph` and `repo-surveyor`
+- bundled OpenProse templates inside both OpenClaw skills for repo-doc and task-context workflows
+
+Skill roles:
+
+- `use-cartograph`: tool-first path when the CLI or MCP server is available
+- `repo-surveyor`: manual fallback path when Cartograph is unavailable or needs verification
+
+Both skills are designed to produce the same downstream contract:
+
+- key files
+- dependency hubs
+- minimal task context
+- doc-ready summary
 
 These assets are meant to pass run IDs and artifact paths between steps instead of copying large prose into the main context.
 
