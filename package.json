@@ -3,11 +3,33 @@
   "version": "1.0.0",
   "description": "MCP server + CLI for intelligent codebase analysis. Scores files by importance, maps dependencies, provides targeted context for AI agents.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anthony-maio/cartograph.git"
+  },
+  "homepage": "https://github.com/anthony-maio/cartograph#readme",
+  "bugs": {
+    "url": "https://github.com/anthony-maio/cartograph/issues"
+  },
+  "keywords": [
+    "ai-agents",
+    "cartograph",
+    "cli",
+    "code-analysis",
+    "mcp",
+    "repository-analysis"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "license": "MIT",
   "files": [
     "dist",
     "assets",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "SECURITY.md"
   ],
   "bin": {
     "cartograph": "./dist/cli.cjs"
@@ -19,6 +41,8 @@
     "start": "node dist/cli.cjs",
     "start:mcp": "node dist/mcp.cjs",
     "check": "tsc",
+    "pack:smoke": "node scripts/pack-smoke.mjs",
+    "release:check": "npm test && npm run check && npm run build && npm run pack:smoke",
     "test": "node --import tsx --test",
     "test:watch": "node --import tsx --test --watch"
   },

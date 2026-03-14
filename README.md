@@ -11,11 +11,13 @@ npm install
 npm run build
 ```
 
-For global use:
+For global use from a local checkout:
 
 ```bash
-npm install -g cartograph
+npm install -g .
 ```
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development workflow and [SECURITY.md](./SECURITY.md) for vulnerability reporting.
 
 ## Command Surface
 
@@ -157,6 +159,7 @@ npm install
 npm test
 npm run check
 npm run build
+npm run pack:smoke
 ```
 
 ## License
