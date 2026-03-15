@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartograph Privacy Policy</title>
+  <meta
+    name="description"
+    content="Privacy policy for Cartograph, the repo analysis tool for coding agents."
+  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="legal-page">
+    <div class="container legal-shell">
+      <a class="legal-back" href="index.html">Back to cartograph.making-minds.ai</a>
+      <div class="section-label">Legal</div>
+      <h1>Cartograph Privacy Policy</h1>
+      <p class="legal-updated">Last updated: March 15, 2026</p>
+      <p class="legal-lead">
+        Cartograph is a local-first repo analysis tool for coding agents. By default, Cartograph runs on your machine and
+        stores working artifacts in your local user cache.
+      </p>
+
+      <section class="legal-section" aria-labelledby="what-we-collect">
+        <h2 id="what-we-collect">What Cartograph collects</h2>
+        <p>
+          Cartograph does not send usage telemetry, analytics events, repository contents, or cached analysis artifacts to
+          Anthony Maio or Making Minds by default.
+        </p>
+        <p>
+          Cartograph may read local repositories, local files, or GitHub repository URLs only when you explicitly run a
+          Cartograph command or invoke it through a supported agent host such as Claude Code, OpenClaw, or MCP.
+        </p>
+      </section>
+
+      <section class="legal-section" aria-labelledby="where-data-lives">
+        <h2 id="where-data-lives">Where your data lives</h2>
+        <p>
+          By default, intermediate artifacts such as analysis results, task context, dependency maps, and generated
+          summaries are stored in your local Cartograph user cache. Cartograph does not write those artifacts into your repo
+          unless you explicitly export them to a path you choose.
+        </p>
+      </section>
+
+      <section class="legal-section" aria-labelledby="third-party-services">
+        <h2 id="third-party-services">Third-party services</h2>
+        <p>
+          Some Cartograph features can call third-party services if you configure them. For example, if you provide API keys
+          for Gemini, OpenAI, or OpenRouter, Cartograph may send prompts and selected repository context to those providers
+          in order to generate summaries or documentation.
+        </p>
+        <p>
+          If you analyze a GitHub URL, Cartograph may access GitHub-hosted repository content needed for that analysis. Your
+          use of those services is also governed by the privacy policies and terms of the relevant provider.
+        </p>
+      </section>
+
+      <section class="legal-section" aria-labelledby="host-integrations">
+        <h2 id="host-integrations">Claude, OpenClaw, and MCP integrations</h2>
+        <p>
+          Cartograph includes install adapters, skills, commands, and optional MCP configuration for supported hosts. Those
+          integrations run Cartograph locally unless you configure an external provider. Host applications may maintain their
+          own logs, settings, or conversation history independent of Cartograph.
+        </p>
+      </section>
+
+      <section class="legal-section" aria-labelledby="your-choices">
+        <h2 id="your-choices">Your choices</h2>
+        <p>
+          You control when Cartograph runs, which repositories it reads, which files are exported, and whether any external
+          AI provider or remote repository source is used.
+        </p>
+      </section>
+
+      <section class="legal-section" aria-labelledby="contact">
+        <h2 id="contact">Contact</h2>
+        <p>
+          Questions about this policy can be sent to
+          <a href="mailto:anthony@making-minds.ai">anthony@making-minds.ai</a>.
+        </p>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
