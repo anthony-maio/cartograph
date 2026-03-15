@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartograph - 5-minute quickstart for coding agents</title>
+  <meta name="description" content="Install Cartograph, analyze a repo, pull task-scoped context, and wire Claude Code or OpenClaw in under five minutes.">
+  <meta property="og:title" content="Cartograph - 5-minute quickstart for coding agents">
+  <meta property="og:description" content="CLI first. MCP optional. Claude Code and OpenClaw skills included.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#b86b30">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <nav class="site-nav" aria-label="Main navigation">
+    <div class="container-wide nav-inner">
+      <a class="brand" href="#" aria-label="Cartograph home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 52 52" fill="none">
+            <circle cx="26" cy="26" r="22" stroke="currentColor" stroke-opacity="0.28" stroke-width="1.5"/>
+            <circle cx="26" cy="26" r="15" stroke="currentColor" stroke-opacity="0.18" stroke-width="1"/>
+            <path d="M26 9 L31 21 L43 26 L31 31 L26 43 L21 31 L9 26 L21 21 Z" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M26 13 L29 23 L39 26 L29 29 L26 39 L23 29 L13 26 L23 23 Z" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-text">Cartograph</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#why">Why</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="#hosts">Host installs</a>
+        <a href="#skills">Skills</a>
+        <a href="#examples">Examples</a>
+      </div>
+
+      <div class="nav-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle theme">theme</button>
+        <a class="btn btn-ghost" href="https://github.com/anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a class="btn btn-primary" href="#quickstart">Start in 5 minutes</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main-content">
+    <section class="hero">
+      <div class="container-wide hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">Single package repo analysis for coding agents</div>
+          <h1>Map the repo before you burn context.</h1>
+          <p class="hero-lead">
+            Cartograph is a CLI-first repo analysis package with an optional MCP server, user-scope host installs,
+            and two packaged skills that keep agent context tight without losing structure.
+          </p>
+          <p class="hero-sub">
+            Use it against local repos or GitHub repos. Rank the files that matter, trace dependency hubs,
+            pull only the context needed for a task, and hand structured artifacts to Claude Code, OpenClaw,
+            or any agent that can run a shell command.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#quickstart">See the 5-minute quickstart</a>
+            <a class="btn btn-ghost" href="https://www.npmjs.com/package/@anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">npm package</a>
+          </div>
+          <div class="hero-stats" role="list" aria-label="Cartograph highlights">
+            <div class="stat" role="listitem">
+              <div class="stat-value">CLI</div>
+              <div class="stat-label">first, MCP optional</div>
+            </div>
+            <div class="stat" role="listitem">
+              <div class="stat-value">2 skills</div>
+              <div class="stat-label">same output contract</div>
+            </div>
+            <div class="stat" role="listitem">
+              <div class="stat-value">1 package</div>
+              <div class="stat-label">Claude, OpenClaw, MCP</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-panel" aria-label="Example command flow">
+          <div class="hero-panel-inner">
+            <div class="panel-kicker">Zero to first result</div>
+            <pre class="signal-block"><code>npm install -g @anthony-maio/cartograph
+
+cartograph analyze ./my-project --static --json
+cartograph context ./my-project --task "add auth" --json
+
+cartograph install claude
+cartograph install openclaw
+cartograph install mcp</code></pre>
+            <div class="hero-panel-footer">
+              <span>Outputs: ranked files, dependency hubs, minimal task context</span>
+              <span class="panel-chip">same contract across both skills</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-surface" id="why">
+      <div class="container">
+        <div class="section-label">Why Cartograph</div>
+        <h2>Most repo handoffs waste tokens on the wrong files.</h2>
+        <p class="section-intro">
+          Dumping an entire codebase into context is slow, expensive, and noisy. Cartograph gives agents a smaller,
+          better map: entry points, fan-in, API surfaces, dependency hubs, and task-scoped context chosen on purpose.
+        </p>
+
+        <div class="comparison-grid">
+          <article class="card card-muted">
+            <div class="card-kicker">Without structure</div>
+            <h3>Repo orientation becomes a context tax.</h3>
+            <ul class="bullet-list" role="list">
+              <li>Agents read broad file trees just to get started.</li>
+              <li>Important wiring gets buried under leaf modules and tests.</li>
+              <li>Docs tasks pull too much parent-context prose.</li>
+              <li>Every new host integration rebuilds the same survey logic.</li>
+            </ul>
+          </article>
+
+          <article class="card card-accent">
+            <div class="card-kicker">With Cartograph</div>
+            <h3>The repo gets reduced to the useful shape.</h3>
+            <ul class="bullet-list" role="list">
+              <li>CLI and MCP expose the same core analysis engine.</li>
+              <li>Artifacts land in user cache instead of dirtying the repo.</li>
+              <li>Claude Code and OpenClaw get packaged skills out of the box.</li>
+              <li>Downstream agents consume the same output contract either way.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="quickstart">
+      <div class="container">
+        <div class="section-label">5-minute quickstart</div>
+        <h2>Install once, map a repo, then wire your host.</h2>
+        <p class="section-intro">
+          This is the fastest useful path. You do not need MCP to start. Install the package, run the CLI,
+          and only add host integrations where they help.
+        </p>
+
+        <div class="steps-grid" role="list">
+          <article class="step-card" role="listitem">
+            <div class="step-number">01</div>
+            <div>
+              <h3>Install the package</h3>
+              <p>Publish path is scoped. The executable remains <code>cartograph</code>.</p>
+              <div class="code-card">
+                <div class="code-title">npm</div>
+                <pre id="install-command" class="code-block"><code>npm install -g @anthony-maio/cartograph</code></pre>
+                <button class="copy-button" type="button" data-copy-target="install-command">Copy</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="step-card" role="listitem">
+            <div class="step-number">02</div>
+            <div>
+              <h3>Analyze a repo</h3>
+              <p>Start with static analysis to get ranked files, edges, and top file contents.</p>
+              <div class="code-card">
+                <div class="code-title">local or GitHub</div>
+                <pre id="analyze-command" class="code-block"><code>cartograph analyze ./my-project --static --json
+cartograph analyze https://github.com/anthony-maio/cartograph --static --json</code></pre>
+                <button class="copy-button" type="button" data-copy-target="analyze-command">Copy</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="step-card" role="listitem">
+            <div class="step-number">03</div>
+            <div>
+              <h3>Pull task-scoped context</h3>
+              <p>Ask for the smallest file set that supports the task you actually want to do.</p>
+              <div class="code-card">
+                <div class="code-title">task context</div>
+                <pre id="context-command" class="code-block"><code>cartograph context ./my-project --task "add user authentication" --json</code></pre>
+                <button class="copy-button" type="button" data-copy-target="context-command">Copy</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="step-card" role="listitem">
+            <div class="step-number">04</div>
+            <div>
+              <h3>Install only the host you want</h3>
+              <p>Hybrid install model: explicit, user-scope, and non-invasive by default.</p>
+              <div class="code-card">
+                <div class="code-title">host installs</div>
+                <pre id="host-command" class="code-block"><code>cartograph install claude
+cartograph install openclaw
+cartograph install mcp</code></pre>
+                <button class="copy-button" type="button" data-copy-target="host-command">Copy</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="step-card" role="listitem">
+            <div class="step-number">05</div>
+            <div>
+              <h3>Generate docs or export artifacts</h3>
+              <p>Keep working artifacts in user cache. Export only when a human needs a concrete path.</p>
+              <div class="code-card">
+                <div class="code-title">docs and export</div>
+                <pre id="docs-command" class="code-block"><code>cartograph wiki ./my-project --static
+cartograph export run-abc123 --to ./artifacts/wiki.md</code></pre>
+                <button class="copy-button" type="button" data-copy-target="docs-command">Copy</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-surface" id="hosts">
+      <div class="container">
+        <div class="section-label">Host installs</div>
+        <h2>One package, three host paths.</h2>
+        <p class="section-intro">
+          Keep the core engine universal. Add host-specific behavior only where it helps.
+        </p>
+
+        <div class="host-grid" role="list">
+          <article class="card" role="listitem">
+            <div class="card-kicker">Claude Code</div>
+            <h3>Skill and agent bundle</h3>
+            <p>Installs user-scope skills plus the balanced documentation-agent set.</p>
+            <ul class="bullet-list" role="list">
+              <li><code>use-cartograph</code></li>
+              <li><code>repo-surveyor</code></li>
+              <li><code>repo-scout</code>, <code>dependency-tracer</code>, <code>context-picker</code>, <code>api-surface-writer</code>, <code>wiki-writer</code></li>
+            </ul>
+          </article>
+
+          <article class="card" role="listitem">
+            <div class="card-kicker">OpenClaw</div>
+            <h3>Skill pack plus OpenProse templates</h3>
+            <p>Installs user-scope skills with bundled templates for repo docs and task-context flows.</p>
+            <ul class="bullet-list" role="list">
+              <li><code>use-cartograph</code></li>
+              <li><code>repo-surveyor</code></li>
+              <li>OpenProse templates for repo docs and task context</li>
+            </ul>
+          </article>
+
+          <article class="card" role="listitem">
+            <div class="card-kicker">MCP</div>
+            <h3>Optional server path</h3>
+            <p>Use MCP only when the host wants tool wiring instead of shell calls.</p>
+            <ul class="bullet-list" role="list">
+              <li><code>analyze_repo</code></li>
+              <li><code>get_file_contents</code></li>
+              <li>Reusable config snippet under the user cache</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="skills">
+      <div class="container">
+        <div class="section-label">Two-skill model</div>
+        <h2>Tool-first when available. Manual fallback when not.</h2>
+        <p class="section-intro">
+          The point of shipping both skills is not redundancy. It is portability. Different acquisition path, same downstream contract.
+        </p>
+
+        <div class="skill-grid">
+          <article class="skill-card skill-card-primary">
+            <div class="skill-name">use-cartograph</div>
+            <p class="skill-body">
+              Use when the CLI or MCP server is available. It tells the host to run Cartograph directly for repo orientation,
+              task context, documentation, and artifact export.
+            </p>
+          </article>
+
+          <article class="skill-card">
+            <div class="skill-name">repo-surveyor</div>
+            <p class="skill-body">
+              Use when Cartograph itself is unavailable or when you want a manual verification pass. It teaches the host how to
+              replicate Cartograph behavior with targeted file discovery, ranking, dependency tracing, and synthesis.
+            </p>
+          </article>
+        </div>
+
+        <div class="contract-card">
+          <div class="card-kicker">Shared output contract</div>
+          <h3>Downstream agents see the same shape either way.</h3>
+          <div class="contract-grid" role="list">
+            <div class="contract-item" role="listitem">key files</div>
+            <div class="contract-item" role="listitem">dependency hubs</div>
+            <div class="contract-item" role="listitem">minimal task context</div>
+            <div class="contract-item" role="listitem">doc-ready summary</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-surface" id="examples">
+      <div class="container">
+        <div class="section-label">Examples</div>
+        <h2>Common first runs.</h2>
+        <div class="example-grid">
+          <article class="example-card">
+            <div class="example-title">Local repo orientation</div>
+            <pre class="code-block"><code>cartograph analyze ./my-project --static --json</code></pre>
+            <p>Use this to get the first ranked map of a repo before touching code.</p>
+          </article>
+
+          <article class="example-card">
+            <div class="example-title">Task-scoped handoff</div>
+            <pre class="code-block"><code>cartograph context ./my-project --task "trace the auth flow" --json</code></pre>
+            <p>Use this when the next agent needs the smallest useful file set for a specific change.</p>
+          </article>
+
+          <article class="example-card">
+            <div class="example-title">Documentation output</div>
+            <pre class="code-block"><code>cartograph wiki ./my-project --static</code></pre>
+            <p>Use this to generate a structured docs pass without rereading the entire tree by hand.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container-wide footer-inner">
+      <div>
+        <div class="footer-brand">Cartograph</div>
+        <p class="footer-copy">CLI first. MCP optional. Claude Code and OpenClaw ready.</p>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://www.npmjs.com/package/@anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">npm</a>
+        <a href="#quickstart">Quickstart</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
