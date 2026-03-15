@@ -7,12 +7,14 @@ import { createRunWorkspace } from "../../src/app/cache.ts";
 import { writeRunArtifact } from "../../src/app/artifacts.ts";
 import { runCli } from "../helpers/run-cli.ts";
 
+const repoUnderTest = "repo-under-test";
+
 test("export subcommand copies the sole artifact from a cached run", async () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "cartograph-export-cli-"));
 
   try {
     const workspace = createRunWorkspace({
-      repo: "D:/Development/opencodewiki",
+      repo: repoUnderTest,
       command: "analyze",
       cacheRoot: tempRoot,
       runId: "run-export-cli",

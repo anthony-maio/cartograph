@@ -6,12 +6,14 @@ import * as path from "node:path";
 import { createRunWorkspace, loadRunManifest } from "../../src/app/cache.ts";
 import { exportRunArtifact, writeRunArtifact } from "../../src/app/artifacts.ts";
 
+const repoUnderTest = "repo-under-test";
+
 test("writeRunArtifact records the artifact in the manifest", () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "cartograph-artifact-test-"));
 
   try {
     const workspace = createRunWorkspace({
-      repo: "D:/Development/opencodewiki",
+      repo: repoUnderTest,
       command: "wiki",
       cacheRoot: tempRoot,
       runId: "run-artifact-1",
@@ -42,7 +44,7 @@ test("exportRunArtifact copies a named artifact to the explicit destination", ()
 
   try {
     const workspace = createRunWorkspace({
-      repo: "D:/Development/opencodewiki",
+      repo: repoUnderTest,
       command: "context",
       cacheRoot: tempRoot,
       runId: "run-artifact-2",
@@ -69,7 +71,7 @@ test("exportRunArtifact requires an explicit destination path", () => {
 
   try {
     const workspace = createRunWorkspace({
-      repo: "D:/Development/opencodewiki",
+      repo: repoUnderTest,
       command: "context",
       cacheRoot: tempRoot,
       runId: "run-artifact-3",

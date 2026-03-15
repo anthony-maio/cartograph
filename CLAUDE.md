@@ -24,7 +24,7 @@ npm run check        # TypeScript type-check (no emit)
 
 ## MCP Server
 
-Registered in `C:\Users\Ant\.claude\claude_desktop_config.json` alongside mnemos. Exposes two tools:
+The MCP server can be registered in a Claude Code or Claude Desktop config. It exposes two tools:
 
 - **`analyze_repo`** — Full static analysis: scored file list, dependency graph, top N file contents. Accepts local path or GitHub URL.
 - **`get_file_contents`** — Read specific files from a repo. Use after `analyze_repo` to drill into files of interest.
@@ -38,10 +38,10 @@ cartograph <repo> [options]
 cartograph ./my-project --static -o analysis.md
 
 # Full LLM analysis
-cartograph ./my-project -p gemini -k $GEMINI_KEY -o wiki.md
+cartograph ./my-project -p gemini -k $CARTOGRAPH_API_KEY -o wiki.md
 
 # Context selection — only files needed for a task
-cartograph ./my-project -c "add user authentication" -p gemini -k $KEY
+cartograph ./my-project -c "add user authentication" -p gemini -k $CARTOGRAPH_API_KEY
 ```
 
 Providers: `gemini` (default), `openai`, `openrouter`. Key via `--key` or `CARTOGRAPH_API_KEY` env var.
