@@ -17,6 +17,13 @@ For global use from npm:
 npm install -g @anthony-maio/cartograph
 ```
 
+For Claude Code plugin install from this public repo:
+
+```text
+/plugin marketplace add anthony-maio/cartograph
+/plugin install cartograph@making-minds-tools
+```
+
 For global use from a local checkout:
 
 ```bash
@@ -24,6 +31,22 @@ npm install -g .
 ```
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development workflow and [SECURITY.md](./SECURITY.md) for vulnerability reporting.
+
+## Claude Code Plugin
+
+This repo also acts as a Claude Code plugin marketplace. The `cartograph` plugin bundles:
+
+- a plugin-scoped Cartograph MCP server
+- slash commands: `/cartograph:analyze`, `/cartograph:context`, `/cartograph:wiki`
+- the `use-cartograph` and `repo-surveyor` skills
+- the documentation-agent bundle: `repo-scout`, `dependency-tracer`, `context-picker`, `api-surface-writer`, and `wiki-writer`
+
+Install it with:
+
+```text
+/plugin marketplace add anthony-maio/cartograph
+/plugin install cartograph@making-minds-tools
+```
 
 ## Command Surface
 
@@ -157,6 +180,8 @@ Both skills are designed to produce the same downstream contract:
 - doc-ready summary
 
 These assets are meant to pass run IDs and artifact paths between steps instead of copying large prose into the main context.
+
+The Claude plugin marketplace in this repo ships the same skills and agents, plus plugin-first slash commands and a bundled Cartograph MCP server.
 
 ## Development
 

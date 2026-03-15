@@ -1,0 +1,6 @@
+{
+  "cartograph": {
+    "command": "npx",
+    "args": ["-y", "@anthony-maio/cartograph", "mcp"]
+  }
+}

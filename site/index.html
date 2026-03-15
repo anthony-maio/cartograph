@@ -90,6 +90,9 @@
 cartograph analyze ./my-project --static --json
 cartograph context ./my-project --task "add auth" --json
 
+/plugin marketplace add anthony-maio/cartograph
+/plugin install cartograph@making-minds-tools
+
 cartograph install claude
 cartograph install openclaw
 cartograph install mcp</code></pre>
@@ -191,10 +194,13 @@ cartograph analyze https://github.com/anthony-maio/cartograph --static --json</c
             <div class="step-number">04</div>
             <div>
               <h3>Install only the host you want</h3>
-              <p>Hybrid install model: explicit, user-scope, and non-invasive by default.</p>
+              <p>Use the Claude plugin marketplace or the hybrid CLI install model, depending on how you work.</p>
               <div class="code-card">
-                <div class="code-title">host installs</div>
-                <pre id="host-command" class="code-block"><code>cartograph install claude
+                <div class="code-title">Claude plugin or host installs</div>
+                <pre id="host-command" class="code-block"><code>/plugin marketplace add anthony-maio/cartograph
+/plugin install cartograph@making-minds-tools
+
+cartograph install claude
 cartograph install openclaw
 cartograph install mcp</code></pre>
                 <button class="copy-button" type="button" data-copy-target="host-command">Copy</button>
@@ -230,9 +236,11 @@ cartograph export run-abc123 --to ./artifacts/wiki.md</code></pre>
         <div class="host-grid" role="list">
           <article class="card" role="listitem">
             <div class="card-kicker">Claude Code</div>
-            <h3>Skill and agent bundle</h3>
-            <p>Installs user-scope skills plus the balanced documentation-agent set.</p>
+            <h3>Plugin, skills, and agent bundle</h3>
+            <p>Install from this repo as a Claude plugin marketplace entry, or use the CLI host install if you prefer manual user-scope wiring.</p>
             <ul class="bullet-list" role="list">
+              <li><code>/plugin marketplace add anthony-maio/cartograph</code></li>
+              <li><code>/plugin install cartograph@making-minds-tools</code></li>
               <li><code>use-cartograph</code></li>
               <li><code>repo-surveyor</code></li>
               <li><code>repo-scout</code>, <code>dependency-tracer</code>, <code>context-picker</code>, <code>api-surface-writer</code>, <code>wiki-writer</code></li>

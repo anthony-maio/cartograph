@@ -13,6 +13,9 @@ test("repository includes the minimum public release surface", () => {
     "SECURITY.md",
     ".github/workflows/ci.yml",
     "scripts/pack-smoke.mjs",
+    ".claude-plugin/marketplace.json",
+    "plugins/cartograph/.claude-plugin/plugin.json",
+    "plugins/cartograph/.mcp.json",
   ]) {
     assert.ok(fs.existsSync(path.join(repoRoot, relativePath)), `${relativePath} should exist`);
   }

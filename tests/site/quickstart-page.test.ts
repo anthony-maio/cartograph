@@ -19,6 +19,8 @@ test("quickstart site includes the core install and usage path", () => {
     "@anthony-maio/cartograph",
     "cartograph analyze",
     "cartograph context",
+    "/plugin marketplace add anthony-maio/cartograph",
+    "/plugin install cartograph@making-minds-tools",
     "cartograph install claude",
     "cartograph install openclaw",
     "cartograph install mcp",

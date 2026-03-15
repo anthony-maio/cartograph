@@ -1,0 +1,27 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "making-minds-tools",
+  "owner": {
+    "name": "Anthony Maio",
+    "email": "anthony@making-minds.ai"
+  },
+  "metadata": {
+    "description": "Claude Code plugins from Anthony Maio for repo intelligence and agent workflows.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "cartograph",
+      "description": "Repo analysis for coding agents with slash commands, skills, documentation agents, and a bundled Cartograph MCP server.",
+      "author": {
+        "name": "Anthony Maio",
+        "email": "anthony@making-minds.ai"
+      },
+      "source": "./plugins/cartograph",
+      "version": "1.0.0",
+      "strict": true,
+      "category": "development",
+      "homepage": "https://github.com/anthony-maio/cartograph/tree/main/plugins/cartograph"
+    }
+  ]
+}
