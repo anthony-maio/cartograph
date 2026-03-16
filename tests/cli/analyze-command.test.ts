@@ -24,7 +24,7 @@ test("analyze subcommand runs static analysis via the explicit command surface",
       fileContents: Record<string, string>;
     };
 
-    assert.equal(parsed.repoName, "opencodewiki");
+    assert.equal(parsed.repoName, path.basename(process.cwd()));
     assert.ok(parsed.files.length > 0);
     assert.ok(Array.isArray(parsed.edges));
     assert.equal(typeof parsed.fileContents, "object");
