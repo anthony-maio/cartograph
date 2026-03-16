@@ -158,6 +158,19 @@ That writes a reusable config file that points at:
 }
 ```
 
+## MCP Registry
+
+Cartograph is set up for publication to the official MCP Registry with the server name `io.github.anthony-maio/cartograph`.
+
+Repo-side metadata lives in:
+
+- [`package.json`](./package.json) via the `mcpName` field
+- [`server.json`](./server.json) for registry metadata
+
+The current install artifact published to npm is:
+
+- `@anthony-maio/cartograph`
+
 ## Packaged Agent Assets
 
 The package currently ships:
