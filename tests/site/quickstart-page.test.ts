@@ -27,6 +27,8 @@ test("quickstart site includes the core install and usage path", () => {
     "cartograph install claude",
     "cartograph install openclaw",
     "cartograph install mcp",
+    "io.github.anthony-maio/cartograph",
+    "registry.modelcontextprotocol.io",
     "use-cartograph",
     "repo-surveyor",
     "5-minute quickstart",

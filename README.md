@@ -2,6 +2,10 @@
 
 Cartograph is a single-package repo analysis tool for coding agents. It ships a CLI, an MCP server, user-scope install adapters for Claude Code and OpenClaw, and packaged agent assets for documentation-heavy workflows.
 
+- npm: [`@anthony-maio/cartograph`](https://www.npmjs.com/package/@anthony-maio/cartograph)
+- MCP Registry: [`io.github.anthony-maio/cartograph`](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.anthony-maio/cartograph)
+- Quickstart: [`cartograph.making-minds.ai`](https://cartograph.making-minds.ai)
+
 Instead of dumping an entire repository into context, Cartograph ranks the files that matter, maps dependencies, caches structured artifacts, and lets the next tool or agent pick up from those artifacts.
 
 ## Install
@@ -16,6 +20,11 @@ For global use from npm:
 ```bash
 npm install -g @anthony-maio/cartograph
 ```
+
+For MCP host discovery via the official registry:
+
+- `io.github.anthony-maio/cartograph`
+- [Registry listing](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.anthony-maio/cartograph)
 
 For Claude Code plugin install from this public repo:
 
@@ -160,7 +169,9 @@ That writes a reusable config file that points at:
 
 ## MCP Registry
 
-Cartograph is set up for publication to the official MCP Registry with the server name `io.github.anthony-maio/cartograph`.
+Cartograph is published in the official MCP Registry with the server name `io.github.anthony-maio/cartograph`.
+
+- [View the registry entry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.anthony-maio/cartograph)
 
 Repo-side metadata lives in:
 
