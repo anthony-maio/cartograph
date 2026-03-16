@@ -2,17 +2,17 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.anthony-maio/cartograph",
   "title": "Cartograph",
-  "description": "Analyze local or GitHub repositories for coding agents with ranked files, dependency mapping, and task-scoped context.",
+  "description": "Repo analysis for coding agents with ranked files, dependency maps, and task-scoped context.",
   "repository": {
     "url": "https://github.com/anthony-maio/cartograph",
     "source": "github"
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@anthony-maio/cartograph",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "transport": {
         "type": "stdio"
       }

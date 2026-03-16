@@ -171,6 +171,10 @@ The current install artifact published to npm is:
 
 - `@anthony-maio/cartograph`
 
+For repeatable registry releases, this repo also includes a GitHub Actions workflow at
+[`publish-mcp.yml`](./.github/workflows/publish-mcp.yml). It publishes the npm package first, then
+authenticates to the MCP Registry with GitHub OIDC and publishes `server.json`.
+
 ## Packaged Agent Assets
 
 The package currently ships:

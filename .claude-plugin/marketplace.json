@@ -7,7 +7,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins from Anthony Maio for repo intelligence and agent workflows.",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "plugins": [
     {
@@ -18,7 +18,7 @@
         "email": "anthony@making-minds.ai"
       },
       "source": "./plugins/cartograph",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "strict": true,
       "category": "development",
       "homepage": "https://github.com/anthony-maio/cartograph/tree/main/plugins/cartograph"

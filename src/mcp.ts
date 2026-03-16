@@ -17,7 +17,7 @@ import { cloneRepo, cleanupRepo, analyzeFiles, getFileContent } from "./analyzer
 
 const server = new McpServer({
   name: "cartograph",
-  version: "1.0.0",
+  version: "1.0.1",
 });
 
 server.tool(

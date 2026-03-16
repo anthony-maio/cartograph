@@ -21,7 +21,7 @@ program.enablePositionalOptions();
 program
   .name("cartograph")
   .description("Generate intelligent wiki documentation from any Git repo. Targeted context for LLMs — only the files that matter.")
-  .version("1.0.0")
+  .version("1.0.1")
   .argument("[repo]", "GitHub URL or local directory path")
   .option("-p, --provider <provider>", "LLM provider: gemini, openai, openrouter, ollama", "gemini")
   .option("-k, --key <key>", "API key (or set CARTOGRAPH_API_KEY env var)")
