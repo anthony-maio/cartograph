@@ -100,6 +100,9 @@ interface RankedFile {
   relevanceScore: number;
   reason: string;
   matchedTokens: string[];
+  informativeMatches: string[];
+  isExplicitChange: boolean;
+  pathAffinity: number;
 }
 
 const STOP_WORDS = new Set([
@@ -108,22 +111,34 @@ const STOP_WORDS = new Set([
   "add", "new", "build", "packet", "generate", "generation", "update", "improve", "repo", "code",
 ]);
 
+const LOW_SIGNAL_TOKENS = new Set([
+  "adapter", "app", "apps", "artifact", "artifacts", "component", "components", "config", "configs", "context",
+  "cpp", "file", "files", "integration", "js", "jsx", "lib", "md", "model", "models", "path", "paths", "py",
+  "server", "src", "test", "tests", "tool", "tools", "ts", "tsx", "ui", "webui",
+]);
+
+const LOW_SIGNAL_PATH_SEGMENTS = new Set([
+  "artifacts", "build", "component", "components", "include", "lib", "models", "src", "test", "tests", "tool", "tools",
+]);
+
 const ENTRY_POINT_PATTERNS = [/^index\./, /^main\./, /^app\./, /^server\./, /^cli\./, /^mod\./];
 
 export function buildTaskPacket(opts: BuildTaskPacketOptions): TaskPacket {
   const changedFiles = new Set((opts.changedFiles ?? []).map(normalizePath));
+  const files = hydrateChangedFiles(opts.files, changedFiles);
   const tokens = extractTaskTokens(opts.taskSummary);
+  const informativeTokens = tokens.filter((token) => !LOW_SIGNAL_TOKENS.has(token));
   const hubs = computeHubStats(opts.edges);
   const neighborMap = buildNeighborMap(opts.edges);
-  const rankedFiles = opts.files
+  const rankedFiles = files
     .map((file) => rankFile(file, tokens, changedFiles, hubs, neighborMap, opts.taskType))
     .sort((a, b) => b.relevanceScore - a.relevanceScore);
 
-  const keyFiles = rankedFiles.filter((candidate) => !isTestFile(candidate.file.path)).slice(0, 6).map(toFileRef);
-  const minimalContext = rankedFiles.slice(0, 4).map(toFileRef);
-  const dependencyHubs = selectDependencyHubs(opts.files, hubs, rankedFiles);
-  const entryPoints = selectEntryPoints(opts.files, rankedFiles, opts.taskType);
-  const validationTargets = selectValidationTargets(opts.files, tokens, keyFiles, changedFiles);
+  const keyFiles = selectPacketFiles(rankedFiles, changedFiles, 6, { excludeTests: true, focused: true, taskType: opts.taskType }).map(toFileRef);
+  const minimalContext = selectPacketFiles(rankedFiles, changedFiles, 4).map(toFileRef);
+  const dependencyHubs = selectDependencyHubs(files, hubs, rankedFiles, changedFiles, informativeTokens, keyFiles, neighborMap);
+  const entryPoints = selectEntryPoints(rankedFiles, changedFiles, opts.taskType);
+  const validationTargets = selectValidationTargets(files, tokens, keyFiles, changedFiles);
 
   const base = {
     taskType: opts.taskType,
@@ -212,24 +227,46 @@ function rankFile(
   const normalizedPath = normalizePath(file.path);
   const haystack = `${normalizedPath} ${file.exports.join(" ")} ${file.imports.join(" ")}`.toLowerCase();
   const matchedTokens = tokens.filter((token) => haystack.includes(token));
+  const informativeMatches = matchedTokens.filter((token) => !LOW_SIGNAL_TOKENS.has(token));
   const hubStats = hubs.get(normalizedPath) ?? { inboundCount: 0, outboundCount: 0 };
+  const isExplicitChange = changedFiles.has(normalizedPath);
+  const pathAffinity = changedFiles.size > 0 ? scorePathAffinity(normalizedPath, Array.from(changedFiles)) : 0;
 
   let relevanceScore = file.importanceScore;
   const reasons: string[] = [];
 
   if (matchedTokens.length > 0) {
-    relevanceScore += matchedTokens.length * 18;
-    reasons.push(`Matches task terms: ${matchedTokens.join(", ")}`);
+    relevanceScore += matchedTokens.reduce((score, token) => score + getTokenWeight(token), 0);
+    reasons.push(`Matches task terms: ${(informativeMatches.length > 0 ? informativeMatches : matchedTokens).join(", ")}`);
   }
 
-  if (changedFiles.has(normalizedPath)) {
-    relevanceScore += 40;
+  if (isExplicitChange) {
+    relevanceScore += taskType === "bug-fix" ? 56 : 44;
     reasons.push("Explicit changed file");
   }
 
+  if (!isExplicitChange && pathAffinity > 0) {
+    relevanceScore += pathAffinity * 8;
+    reasons.push("Near explicit change path");
+  }
+
   if (hubStats.inboundCount + hubStats.outboundCount > 0) {
-    relevanceScore += Math.min(hubStats.inboundCount + hubStats.outboundCount, 12);
-    reasons.push(hubStats.inboundCount >= hubStats.outboundCount ? "High fan-in dependency hub" : "Wiring/orchestration hub");
+    const hubBonus = Math.min(hubStats.inboundCount + hubStats.outboundCount, 12);
+    const relevantHub = informativeMatches.length > 0 || pathAffinity > 0 || (taskType !== "bug-fix" && taskType !== "pr-review");
+    if (relevantHub) {
+      relevanceScore += hubBonus;
+      reasons.push(hubStats.inboundCount >= hubStats.outboundCount ? "High fan-in dependency hub" : "Wiring/orchestration hub");
+    }
+  }
+
+  if (!isExplicitChange && isDocumentationLike(file.path) && (taskType === "bug-fix" || taskType === "pr-review")) {
+    relevanceScore -= 34;
+    reasons.push("Documentation path");
+  }
+
+  if (!isExplicitChange && isArtifactPath(file.path) && taskType === "bug-fix") {
+    relevanceScore -= 18;
+    reasons.push("Generated artifact path");
   }
 
   if (isEntryPoint(file.path)) {
@@ -259,7 +296,94 @@ function rankFile(
     relevanceScore,
     reason: reasons[0],
     matchedTokens,
+    informativeMatches,
+    isExplicitChange,
+    pathAffinity,
   };
+}
+
+function selectPacketFiles(
+  rankedFiles: RankedFile[],
+  changedFiles: Set<string>,
+  limit: number,
+  opts?: { excludeTests?: boolean; focused?: boolean; taskType?: TaskPacketType },
+): RankedFile[] {
+  const candidates = opts?.excludeTests
+    ? rankedFiles.filter((candidate) => !isTestFile(candidate.file.path))
+    : rankedFiles;
+
+  const selected: RankedFile[] = [];
+  const seen = new Set<string>();
+
+  const explicitChanges = candidates
+    .filter((candidate) => changedFiles.has(normalizePath(candidate.file.path)))
+    .sort((a, b) => compareExplicitChanges(a, b));
+
+  for (const candidate of explicitChanges) {
+    if (selected.length >= limit) {
+      break;
+    }
+    seen.add(normalizePath(candidate.file.path));
+    selected.push(candidate);
+  }
+
+  for (const candidate of candidates) {
+    if (selected.length >= limit) {
+      break;
+    }
+    const normalizedPath = normalizePath(candidate.file.path);
+    if (seen.has(normalizedPath)) {
+      continue;
+    }
+    if (opts?.focused && shouldSkipFocusedCandidate(candidate, opts.taskType)) {
+      continue;
+    }
+    seen.add(normalizedPath);
+    selected.push(candidate);
+  }
+
+  if (opts?.focused && selected.length < limit) {
+    for (const candidate of candidates) {
+      if (selected.length >= limit) {
+        break;
+      }
+      const normalizedPath = normalizePath(candidate.file.path);
+      if (seen.has(normalizedPath)) {
+        continue;
+      }
+      if (shouldSkipFocusedFallbackCandidate(candidate, changedFiles, opts.taskType)) {
+        continue;
+      }
+      seen.add(normalizedPath);
+      selected.push(candidate);
+    }
+  }
+
+  return selected;
+}
+
+function hydrateChangedFiles(files: FileNode[], changedFiles: Set<string>): FileNode[] {
+  const hydrated = [...files];
+  const knownPaths = new Set(files.map((file) => normalizePath(file.path)));
+
+  for (const changedFile of changedFiles) {
+    if (knownPaths.has(changedFile)) {
+      continue;
+    }
+
+    hydrated.push({
+      path: changedFile,
+      language: inferLanguageFromPath(changedFile),
+      lines: 0,
+      bytes: 0,
+      imports: [],
+      exports: [],
+      importanceScore: 0,
+    });
+    knownPaths.add(changedFile);
+  }
+
+  return hydrated;
 }
 
 function toFileRef(candidate: RankedFile): TaskPacketFileRef {
@@ -301,41 +425,114 @@ function buildNeighborMap(edges: DependencyEdge[]): Map<string, Set<string>> {
   return neighbors;
 }
 
-function selectDependencyHubs(files: FileNode[], hubs: Map<string, HubStats>, rankedFiles: RankedFile[]): TaskPacketDependencyHub[] {
-  const topRanked = new Set(rankedFiles.slice(0, 10).map((candidate) => normalizePath(candidate.file.path)));
+function selectDependencyHubs(
+  files: FileNode[],
+  hubs: Map<string, HubStats>,
+  rankedFiles: RankedFile[],
+  changedFiles: Set<string>,
+  informativeTokens: string[],
+  keyFiles: TaskPacketFileRef[],
+  neighborMap: Map<string, Set<string>>,
+): TaskPacketDependencyHub[] {
+  const keyFilePaths = new Set(keyFiles.map((file) => normalizePath(file.path)));
+  const directChangedNeighbors = new Set<string>();
+  for (const changedFile of changedFiles) {
+    for (const neighbor of neighborMap.get(changedFile) ?? []) {
+      directChangedNeighbors.add(neighbor);
+    }
+  }
+  const topRanked = new Set(
+    rankedFiles
+      .slice(0, 10)
+      .filter((candidate) => candidate.isExplicitChange || candidate.informativeMatches.length > 0 || keyFilePaths.has(normalizePath(candidate.file.path)))
+      .map((candidate) => normalizePath(candidate.file.path)),
+  );
+  const focusPaths = Array.from(new Set([
+    ...Array.from(changedFiles),
+    ...Array.from(keyFilePaths),
+    ...Array.from(directChangedNeighbors),
+  ]));
+
   return files
     .map((file) => {
-      const stats = hubs.get(normalizePath(file.path)) ?? { inboundCount: 0, outboundCount: 0 };
+      const normalizedPath = normalizePath(file.path);
+      const stats = hubs.get(normalizedPath) ?? { inboundCount: 0, outboundCount: 0 };
+      const tokenMatches = informativeTokens.filter((token) => normalizedPath.toLowerCase().includes(token)).length;
+      const pathAffinity = scorePathAffinity(normalizedPath, focusPaths);
+      const directChangedNeighbor = directChangedNeighbors.has(normalizedPath);
+      const inKeyFiles = keyFilePaths.has(normalizedPath);
+      const explicitChange = changedFiles.has(normalizedPath);
       return {
         path: file.path,
         inboundCount: stats.inboundCount,
         outboundCount: stats.outboundCount,
         role: describeHubRole(stats),
-        score: stats.inboundCount + stats.outboundCount + (topRanked.has(normalizePath(file.path)) ? 5 : 0),
+        score:
+          stats.inboundCount +
+          stats.outboundCount +
+          (topRanked.has(normalizedPath) ? 5 : 0) +
+          (tokenMatches * 10) +
+          (pathAffinity * 8) +
+          (inKeyFiles ? 12 : 0) +
+          (explicitChange ? 10 : 0) +
+          (directChangedNeighbor ? 12 : 0),
+        pathAffinity,
+        tokenMatches,
+        isTopRanked: topRanked.has(normalizedPath),
+        directChangedNeighbor,
+        inKeyFiles,
+        explicitChange,
       };
     })
     .filter((hub) => hub.inboundCount + hub.outboundCount > 0)
+    .filter((hub) => hub.pathAffinity > 0 || hub.tokenMatches > 0 || hub.isTopRanked)
+    .filter((hub) => {
+      if (changedFiles.size === 0) {
+        return true;
+      }
+      if (directChangedNeighbors.size > 0) {
+        return hub.explicitChange || hub.directChangedNeighbor;
+      }
+      return hub.explicitChange || (hub.pathAffinity > 0 && hub.inboundCount + hub.outboundCount >= 2);
+    })
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)
-    .map(({ score: _score, ...hub }) => hub);
+    .map(({
+      score: _score,
+      pathAffinity: _pathAffinity,
+      tokenMatches: _tokenMatches,
+      isTopRanked: _isTopRanked,
+      directChangedNeighbor: _directChangedNeighbor,
+      inKeyFiles: _inKeyFiles,
+      explicitChange: _explicitChange,
+      ...hub
+    }) => hub);
 }
 
-function selectEntryPoints(files: FileNode[], rankedFiles: RankedFile[], taskType: TaskPacketType): string[] {
-  const explicit = files.filter((file) => isEntryPoint(file.path)).sort((a, b) => b.importanceScore - a.importanceScore).map((file) => file.path);
+function selectEntryPoints(rankedFiles: RankedFile[], changedFiles: Set<string>, taskType: TaskPacketType): string[] {
+  const relevant = selectPacketFiles(rankedFiles, changedFiles, 12, {
+    focused: taskType !== "task",
+    taskType,
+  });
+  const explicit = relevant.filter((candidate) => isEntryPoint(candidate.file.path)).map((candidate) => candidate.file.path);
   if (explicit.length > 0) {
     return explicit.slice(0, taskType === "trace-flow" ? 4 : 3);
   }
-  return rankedFiles.filter((candidate) => !isTestFile(candidate.file.path)).slice(0, 3).map((candidate) => candidate.file.path);
+  return relevant
+    .filter((candidate) => !isTestFile(candidate.file.path))
+    .slice(0, 3)
+    .map((candidate) => candidate.file.path);
 }
 
 function selectValidationTargets(files: FileNode[], tokens: string[], keyFiles: TaskPacketFileRef[], changedFiles: Set<string>): TaskPacketValidationTarget[] {
   const keyStems = new Set(keyFiles.map((file) => fileStem(file.path)));
-  return files
+  const candidates = files
     .filter((file) => isTestFile(file.path))
     .map((file) => {
       const normalizedPath = normalizePath(file.path).toLowerCase();
       let score = 0;
       const reasons: string[] = [];
+      const directChangedMatch = Array.from(changedFiles).some((changed) => normalizedPath.includes(fileStem(changed).toLowerCase()));
       const matchedTokens = tokens.filter((token) => normalizedPath.includes(token));
       if (matchedTokens.length > 0) {
         score += matchedTokens.length * 10;
@@ -348,16 +545,23 @@ function selectValidationTargets(files: FileNode[], tokens: string[], keyFiles: 
           break;
         }
       }
-      if (Array.from(changedFiles).some((changed) => normalizedPath.includes(fileStem(changed).toLowerCase()))) {
+      if (directChangedMatch) {
         score += 15;
         reasons.push("Likely covers changed file");
       }
-      return { path: file.path, reason: reasons[0] ?? "Nearby test surface", score };
+      return { path: file.path, reason: reasons[0] ?? "Nearby test surface", score, directChangedMatch };
     })
-    .filter((candidate) => candidate.score > 0)
+    .filter((candidate) => candidate.score > 0);
+
+  const filteredCandidates =
+    changedFiles.size > 0 && candidates.some((candidate) => candidate.directChangedMatch)
+      ? candidates.filter((candidate) => candidate.directChangedMatch)
+      : candidates;
+
+  return filteredCandidates
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)
-    .map(({ score: _score, ...target }) => target);
+    .map(({ score: _score, directChangedMatch: _directChangedMatch, ...target }) => target);
 }
 
 function buildRisks(
@@ -548,7 +752,13 @@ function extractTaskTokens(summary: string): string[] {
     .split(/[\s-]+/)
     .map((token) => token.trim())
     .filter((token) => token.length >= 3 && !STOP_WORDS.has(token));
-  return Array.from(new Set(tokens)).slice(0, 8);
+  const uniqueTokens = Array.from(new Set(tokens));
+  const informativeTokens = uniqueTokens.filter((token) => !LOW_SIGNAL_TOKENS.has(token));
+  const lowSignalTokens = uniqueTokens.filter((token) => LOW_SIGNAL_TOKENS.has(token));
+  if (informativeTokens.length >= 4) {
+    return informativeTokens.slice(0, 8);
+  }
+  return [...informativeTokens, ...lowSignalTokens].slice(0, 8);
 }
 
 function normalizePath(filePath: string): string {
@@ -567,4 +777,137 @@ function isEntryPoint(filePath: string): boolean {
 function fileStem(filePath: string): string {
   const baseName = path.posix.basename(normalizePath(filePath));
   return baseName.replace(/\.(test|spec)\.[^.]+$/i, "").replace(/\.[^.]+$/, "");
+}
+
+function getTokenWeight(token: string): number {
+  return LOW_SIGNAL_TOKENS.has(token) ? 6 : 18;
+}
+
+function isDocumentationLike(filePath: string): boolean {
+  const normalizedPath = normalizePath(filePath);
+  const baseName = path.posix.basename(normalizedPath).toLowerCase();
+  return normalizedPath.endsWith(".md")
+    || normalizedPath.endsWith(".mdx")
+    || normalizedPath.endsWith(".rst")
+    || normalizedPath.endsWith(".txt")
+    || baseName === "readme"
+    || baseName.startsWith("readme.")
+    || baseName.startsWith("changelog.")
+    || baseName.startsWith("license");
+}
+
+function isArtifactPath(filePath: string): boolean {
+  return normalizePath(filePath).split("/").includes("artifacts");
+}
+
+function scorePathAffinity(candidatePath: string, focusPaths: string[]): number {
+  const candidateSegments = tokenizePath(candidatePath);
+  let best = 0;
+  for (const focusPath of focusPaths) {
+    const focusSegments = tokenizePath(focusPath);
+    const sharedSegments = candidateSegments.filter((segment) => focusSegments.includes(segment));
+    best = Math.max(best, sharedSegments.length);
+  }
+  return best;
+}
+
+function tokenizePath(filePath: string): string[] {
+  return normalizePath(filePath)
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((segment) => segment.length >= 3 && !LOW_SIGNAL_PATH_SEGMENTS.has(segment));
+}
+
+function inferLanguageFromPath(filePath: string): string {
+  const extension = path.posix.extname(normalizePath(filePath)).toLowerCase();
+  switch (extension) {
+    case ".ts":
+    case ".tsx":
+      return "typescript";
+    case ".js":
+    case ".jsx":
+    case ".mjs":
+    case ".cjs":
+      return "javascript";
+    case ".py":
+      return "python";
+    case ".cpp":
+    case ".cc":
+    case ".cxx":
+    case ".c":
+    case ".h":
+    case ".hpp":
+      return "cpp";
+    case ".go":
+      return "go";
+    case ".rs":
+      return "rust";
+    case ".java":
+      return "java";
+    case ".cs":
+      return "csharp";
+    case ".md":
+    case ".mdx":
+    case ".rst":
+    case ".txt":
+      return "markdown";
+    default:
+      return "unknown";
+  }
+}
+
+function compareExplicitChanges(a: RankedFile, b: RankedFile): number {
+  const aRank = getExplicitChangeRank(a.file.path);
+  const bRank = getExplicitChangeRank(b.file.path);
+  if (aRank !== bRank) {
+    return aRank - bRank;
+  }
+  return b.relevanceScore - a.relevanceScore;
+}
+
+function getExplicitChangeRank(filePath: string): number {
+  if (isTestFile(filePath)) {
+    return 2;
+  }
+  if (isDocumentationLike(filePath)) {
+    return 1;
+  }
+  return 0;
+}
+
+function shouldSkipFocusedCandidate(candidate: RankedFile, taskType?: TaskPacketType): boolean {
+  if (candidate.isExplicitChange) {
+    return false;
+  }
+
+  if (taskType === "bug-fix" || taskType === "pr-review") {
+    if (isDocumentationLike(candidate.file.path)) {
+      return true;
+    }
+    if (candidate.informativeMatches.length === 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function shouldSkipFocusedFallbackCandidate(
+  candidate: RankedFile,
+  changedFiles: Set<string>,
+  taskType?: TaskPacketType,
+): boolean {
+  if (!taskType || taskType === "task") {
+    return false;
+  }
+
+  if (isDocumentationLike(candidate.file.path)) {
+    return true;
+  }
+
+  if (changedFiles.size === 0) {
+    return false;
+  }
+
+  return candidate.informativeMatches.length === 0 && candidate.pathAffinity === 0;
 }
