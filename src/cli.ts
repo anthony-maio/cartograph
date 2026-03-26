@@ -6,13 +6,14 @@ import chalk from "chalk";
 import { PROVIDERS, type ProviderId, type LLMConfig } from "./schema";
 import { cloneRepo, cleanupRepo, analyzeFiles, getFileContent } from "./analyzer";
 import { summarizeFiles, synthesizeWiki, selectContext } from "./pipeline";
-import { wikiToMarkdown, contextToMarkdown, staticToMarkdown } from "./markdown";
+import { wikiToMarkdown, contextToMarkdown, staticToMarkdown, taskPacketToMarkdown } from "./markdown";
 import { createRunWorkspace, getCacheRoot, findRunDirectory, loadRunManifest } from "./app/cache";
 import { exportRunArtifact, writeRunArtifact } from "./app/artifacts";
 import { estimateContextTokens, hydrateContextFiles } from "./app/context";
 import { handleInstallCommand } from "./app/commands/install";
 import { handleUninstallCommand } from "./app/commands/uninstall";
 import { handleDoctorCommand } from "./app/commands/doctor";
+import { buildTaskPacket, type TaskPacketType } from "./app/task-packets";
 
 const program = new Command();
 
@@ -21,7 +22,7 @@ program.enablePositionalOptions();
 program
   .name("cartograph")
   .description("Generate intelligent wiki documentation from any Git repo. Targeted context for LLMs — only the files that matter.")
-  .version("1.0.1")
+  .version("1.1.0")
   .argument("[repo]", "GitHub URL or local directory path")
   .option("-p, --provider <provider>", "LLM provider: gemini, openai, openrouter, ollama", "gemini")
   .option("-k, --key <key>", "API key (or set CARTOGRAPH_API_KEY env var)")
@@ -77,6 +78,16 @@ program
   .requiredOption("--to <path>", "Destination path for the exported artifact")
   .option("-a, --artifact <name>", "Artifact name to export when the run contains multiple artifacts")
   .action(handleExportCommand);
+
+program
+  .command("packet <repo>")
+  .description("Build a typed task packet with key files, dependency hubs, validation targets, and next steps.")
+  .requiredOption("-t, --task <task>", "Task summary used to build the packet")
+  .requiredOption("--type <type>", "Packet type: task, bug-fix, pr-review, trace-flow, change-request")
+  .option("--changed <paths...>", "Explicit changed files for review-oriented packets")
+  .option("-o, --output <path>", "Output file path (default: stdout)")
+  .option("--markdown", "Render markdown instead of JSON")
+  .action((repo, opts) => runPacket(repo, opts));
 
 program
   .command("install [target]")
@@ -277,6 +288,68 @@ async function run(repo: string, opts: {
   }
 }
 
+async function runPacket(repo: string, opts: {
+  task: string;
+  type: string;
+  changed?: string[];
+  output?: string;
+  markdown?: boolean;
+}) {
+  const isLocal = fs.existsSync(repo);
+  let repoDir: string;
+  let needsCleanup = false;
+  const spinner = ora();
+
+  try {
+    if (isLocal) {
+      repoDir = path.resolve(repo);
+      spinner.succeed(`Using local repo: ${repoDir}`);
+    } else {
+      spinner.start("Cloning repository...");
+      let url = repo.trim();
+      if (url.includes("github.com") && !url.endsWith(".git")) {
+        url = url.replace(/\/$/, "") + ".git";
+      }
+      repoDir = await cloneRepo(url);
+      needsCleanup = true;
+      spinner.succeed("Cloned repository");
+    }
+
+    spinner.start("Analyzing file structure and dependencies...");
+    const { files, edges } = analyzeFiles(repoDir);
+    spinner.succeed(`Found ${files.length} files, ${edges.length} dependency edges`);
+
+    const repoName = isLocal
+      ? path.basename(path.resolve(repo))
+      : repo.split("/").slice(-2).join("/").replace(".git", "").replace(/\/$/, "");
+    const repoId = isLocal ? repoDir : repo;
+
+    const packet = buildTaskPacket({
+      repoId,
+      repoName,
+      taskType: parseTaskPacketType(opts.type),
+      taskSummary: opts.task,
+      files,
+      edges,
+      changedFiles: opts.changed,
+    });
+
+    const output = opts.markdown
+      ? taskPacketToMarkdown(packet)
+      : JSON.stringify(packet, null, 2);
+
+    writeOutput(output, opts.output);
+    cacheRunOutput(repoId, "packet", "task-packet", opts.markdown ? "md" : "json", output);
+  } catch (err: any) {
+    spinner.fail(chalk.red(err.message || String(err)));
+    process.exit(1);
+  } finally {
+    if (needsCleanup && repoDir!) {
+      cleanupRepo(repoDir!);
+    }
+  }
+}
+
 function writeOutput(content: string, outputPath?: string) {
   if (outputPath) {
     fs.writeFileSync(outputPath, content, "utf-8");
@@ -288,7 +361,7 @@ function writeOutput(content: string, outputPath?: string) {
 
 function cacheRunOutput(
   repo: string,
-  command: "analyze" | "context" | "wiki",
+  command: "analyze" | "context" | "wiki" | "packet",
   artifactName: string,
   extension: "json" | "md",
   content: string,
@@ -300,4 +373,15 @@ function cacheRunOutput(
     content,
   });
   console.error(chalk.gray(`Cached run ${workspace.runId} in ${workspace.runDir}`));
+}
+
+function parseTaskPacketType(value: string): TaskPacketType {
+  const normalized = value.trim().toLowerCase() as TaskPacketType;
+  const allowed = new Set<TaskPacketType>(["task", "bug-fix", "pr-review", "trace-flow", "change-request"]);
+
+  if (!allowed.has(normalized)) {
+    throw new Error(`Unknown packet type "${value}". Use: task, bug-fix, pr-review, trace-flow, change-request.`);
+  }
+
+  return normalized;
 }

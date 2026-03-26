@@ -12,6 +12,7 @@ test("help shows the expanded command surface and correct API key env var", asyn
   assert.match(output, /\buninstall\b/);
   assert.match(output, /\bdoctor\b/);
   assert.match(output, /\bexport\b/);
+  assert.match(output, /\bpacket\b/);
   assert.match(output, /\bmcp\b/);
   assert.match(output, /CARTOGRAPH_API_KEY/);
   assert.doesNotMatch(output, /OPENCODEWIKI_API_KEY/);

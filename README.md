@@ -61,6 +61,7 @@ Install it with:
 
 ```bash
 cartograph analyze <repo> [options]
+cartograph packet <repo> --type <type> --task "<task>" [--changed <paths...>]
 cartograph context <repo> --task "<task>" [options]
 cartograph wiki <repo> [options]
 cartograph export <run-id> --to <path> [--artifact <name>]
@@ -85,6 +86,9 @@ cartograph analyze ./my-project --static --json
 
 # Task-scoped context selection
 cartograph context ./my-project --task "add user authentication" --json
+
+# Typed task packet
+cartograph packet ./my-project --type bug-fix --task "fix auth refresh bug"
 
 # Full wiki output
 cartograph wiki ./my-project -p gemini -k $CARTOGRAPH_API_KEY -o wiki.md
@@ -147,6 +151,7 @@ Tools:
 
 - `analyze_repo`: score files, map dependencies, and return top file contents for a local repo or GitHub URL
 - `get_file_contents`: fetch full contents for specific files after analysis
+- `build_task_packet`: return a typed task packet with key files, dependency hubs, validation targets, risks, and task-specific details
 
 If you want Cartograph's packaged MCP snippet, run:
 

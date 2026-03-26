@@ -1,6 +1,6 @@
 {
   "name": "@anthony-maio/cartograph",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "mcpName": "io.github.anthony-maio/cartograph",
   "description": "MCP server + CLI for intelligent codebase analysis. Scores files by importance, maps dependencies, provides targeted context for AI agents.",
   "type": "module",

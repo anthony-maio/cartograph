@@ -1,6 +1,6 @@
 {
   "name": "cartograph",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Repo analysis for coding agents with slash commands, skills, documentation agents, and a bundled Cartograph MCP server.",
   "author": {
     "name": "Anthony Maio",

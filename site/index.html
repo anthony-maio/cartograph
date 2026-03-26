@@ -98,7 +98,7 @@ cartograph install claude
 cartograph install openclaw
 cartograph install mcp</code></pre>
             <div class="hero-panel-footer">
-              <span>Outputs: ranked files, dependency hubs, minimal task context</span>
+              <span>Outputs: ranked files, dependency hubs, minimal task context, task packets</span>
               <span class="panel-chip">same contract across both skills</span>
             </div>
           </div>
@@ -268,6 +268,7 @@ cartograph export run-abc123 --to ./artifacts/wiki.md</code></pre>
             <p>Use MCP only when the host wants tool wiring instead of shell calls.</p>
             <ul class="bullet-list" role="list">
               <li><code>analyze_repo</code></li>
+              <li><code>build_task_packet</code></li>
               <li><code>get_file_contents</code></li>
               <li>Reusable config snippet under the user cache</li>
             </ul>
@@ -330,6 +331,12 @@ cartograph export run-abc123 --to ./artifacts/wiki.md</code></pre>
             <div class="example-title">Task-scoped handoff</div>
             <pre class="code-block"><code>cartograph context ./my-project --task "trace the auth flow" --json</code></pre>
             <p>Use this when the next agent needs the smallest useful file set for a specific change.</p>
+          </article>
+
+          <article class="example-card">
+            <div class="example-title">Typed task packet</div>
+            <pre class="code-block"><code>cartograph packet ./my-project --type bug-fix --task "fix auth refresh bug"</code></pre>
+            <p>Use this when the next agent needs a reusable packet with risks, validation targets, and likely edit points.</p>
           </article>
 
           <article class="example-card">

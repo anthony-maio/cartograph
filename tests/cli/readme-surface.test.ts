@@ -16,6 +16,7 @@ test("README and CLI help describe the packaged command surface", async () => {
 
   for (const fragment of [
     "cartograph analyze <repo>",
+    "cartograph packet <repo> --type <type> --task",
     "cartograph context <repo> --task",
     "cartograph wiki <repo>",
     "cartograph export <run-id> --to <path>",
@@ -30,6 +31,7 @@ test("README and CLI help describe the packaged command surface", async () => {
 
   assert.match(output, /\binstall\b/);
   assert.match(output, /\bdoctor\b/);
+  assert.match(output, /\bpacket\b/);
   assert.match(output, /CARTOGRAPH_API_KEY/);
 });
 

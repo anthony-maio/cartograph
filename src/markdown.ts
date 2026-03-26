@@ -1,4 +1,5 @@
 import type { WikiResult, FileSummary, FileNode, DependencyEdge } from "./schema";
+import type { TaskPacket } from "./app/task-packets";
 
 export function wikiToMarkdown(wiki: WikiResult): string {
   const lines: string[] = [];
@@ -144,6 +145,88 @@ export function contextToMarkdown(
     lines.push("```");
     lines.push("");
   }
+
+  return lines.join("\n");
+}
+
+export function taskPacketToMarkdown(packet: TaskPacket): string {
+  const lines: string[] = [];
+
+  lines.push(`# ${packet.taskType}: ${packet.taskSummary}`);
+  lines.push("");
+  lines.push(`> Repo: ${packet.repoName} | Confidence: ${packet.confidence}`);
+  lines.push("");
+
+  lines.push("## Key Files");
+  lines.push("");
+  for (const file of packet.keyFiles) {
+    lines.push(`- \`${file.path}\` — ${file.reason}`);
+  }
+  lines.push("");
+
+  lines.push("## Dependency Hubs");
+  lines.push("");
+  for (const hub of packet.dependencyHubs) {
+    lines.push(`- \`${hub.path}\` — ${hub.role} (${hub.inboundCount} inbound, ${hub.outboundCount} outbound)`);
+  }
+  lines.push("");
+
+  if (packet.entryPoints.length > 0) {
+    lines.push("## Entry Points");
+    lines.push("");
+    for (const entry of packet.entryPoints) {
+      lines.push(`- \`${entry}\``);
+    }
+    lines.push("");
+  }
+
+  lines.push("## Minimal Context");
+  lines.push("");
+  for (const file of packet.minimalContext) {
+    lines.push(`- \`${file.path}\` — ${file.reason}`);
+  }
+  lines.push("");
+
+  if (packet.validationTargets.length > 0) {
+    lines.push("## Validation Targets");
+    lines.push("");
+    for (const target of packet.validationTargets) {
+      lines.push(`- \`${target.path}\` — ${target.reason}`);
+    }
+    lines.push("");
+  }
+
+  if (packet.risks.length > 0) {
+    lines.push("## Risks");
+    lines.push("");
+    for (const risk of packet.risks) {
+      lines.push(`- ${risk}`);
+    }
+    lines.push("");
+  }
+
+  if (packet.unknowns.length > 0) {
+    lines.push("## Unknowns");
+    lines.push("");
+    for (const unknown of packet.unknowns) {
+      lines.push(`- ${unknown}`);
+    }
+    lines.push("");
+  }
+
+  lines.push("## Recommended Next Steps");
+  lines.push("");
+  for (const step of packet.recommendedNextSteps) {
+    lines.push(`- ${step}`);
+  }
+  lines.push("");
+
+  lines.push("## Details");
+  lines.push("");
+  lines.push("```json");
+  lines.push(JSON.stringify(packet.details, null, 2));
+  lines.push("```");
+  lines.push("");
 
   return lines.join("\n");
 }
