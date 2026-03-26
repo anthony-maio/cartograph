@@ -118,7 +118,8 @@ const LOW_SIGNAL_TOKENS = new Set([
 ]);
 
 const LOW_SIGNAL_PATH_SEGMENTS = new Set([
-  "artifacts", "build", "component", "components", "include", "lib", "models", "src", "test", "tests", "tool", "tools",
+  "artifacts", "build", "cjs", "component", "components", "cpp", "include", "js", "json", "jsx", "legacy", "lib",
+  "mjs", "models", "py", "src", "test", "tests", "tool", "tools", "ts", "tsx",
 ]);
 
 const ENTRY_POINT_PATTERNS = [/^index\./, /^main\./, /^app\./, /^server\./, /^cli\./, /^mod\./];
@@ -134,7 +135,12 @@ export function buildTaskPacket(opts: BuildTaskPacketOptions): TaskPacket {
     .map((file) => rankFile(file, tokens, changedFiles, hubs, neighborMap, opts.taskType))
     .sort((a, b) => b.relevanceScore - a.relevanceScore);
 
-  const keyFiles = selectPacketFiles(rankedFiles, changedFiles, 6, { excludeTests: true, focused: true, taskType: opts.taskType }).map(toFileRef);
+  const keyFiles = selectPacketFiles(rankedFiles, changedFiles, 6, {
+    excludeTests: true,
+    focused: true,
+    taskType: opts.taskType,
+    hasExplicitChanges: changedFiles.size > 0,
+  }).map(toFileRef);
   const minimalContext = selectPacketFiles(rankedFiles, changedFiles, 4).map(toFileRef);
   const dependencyHubs = selectDependencyHubs(files, hubs, rankedFiles, changedFiles, informativeTokens, keyFiles, neighborMap);
   const entryPoints = selectEntryPoints(rankedFiles, changedFiles, opts.taskType);
@@ -269,6 +275,18 @@ function rankFile(
     reasons.push("Generated artifact path");
   }
 
+  if (!isExplicitChange && taskType === "bug-fix" && changedFiles.size > 0) {
+    if (isLegacyPath(file.path)) {
+      relevanceScore -= 36;
+      reasons.push("Legacy path");
+    }
+
+    if (isPeripheralScriptPath(file.path) && hubStats.inboundCount === 0) {
+      relevanceScore -= 46;
+      reasons.push("Peripheral utility script");
+    }
+  }
+
   if (isEntryPoint(file.path)) {
     relevanceScore += taskType === "trace-flow" ? 24 : 6;
     reasons.push("Entry-point file");
@@ -306,7 +324,7 @@ function selectPacketFiles(
   rankedFiles: RankedFile[],
   changedFiles: Set<string>,
   limit: number,
-  opts?: { excludeTests?: boolean; focused?: boolean; taskType?: TaskPacketType },
+  opts?: { excludeTests?: boolean; focused?: boolean; taskType?: TaskPacketType; hasExplicitChanges?: boolean },
 ): RankedFile[] {
   const candidates = opts?.excludeTests
     ? rankedFiles.filter((candidate) => !isTestFile(candidate.file.path))
@@ -335,7 +353,7 @@ function selectPacketFiles(
     if (seen.has(normalizedPath)) {
       continue;
     }
-    if (opts?.focused && shouldSkipFocusedCandidate(candidate, opts.taskType)) {
+    if (opts?.focused && shouldSkipFocusedCandidate(candidate, opts.taskType, opts.hasExplicitChanges)) {
       continue;
     }
     seen.add(normalizedPath);
@@ -351,7 +369,7 @@ function selectPacketFiles(
       if (seen.has(normalizedPath)) {
         continue;
       }
-      if (shouldSkipFocusedFallbackCandidate(candidate, changedFiles, opts.taskType)) {
+      if (shouldSkipFocusedFallbackCandidate(candidate, changedFiles, opts.taskType, opts.hasExplicitChanges)) {
         continue;
       }
       seen.add(normalizedPath);
@@ -493,7 +511,7 @@ function selectDependencyHubs(
       if (directChangedNeighbors.size > 0) {
         return hub.explicitChange || hub.directChangedNeighbor;
       }
-      return hub.explicitChange || (hub.pathAffinity > 0 && hub.inboundCount + hub.outboundCount >= 2);
+      return hub.explicitChange || (hub.pathAffinity > 0 && hub.inboundCount >= 2);
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)
@@ -800,6 +818,19 @@ function isArtifactPath(filePath: string): boolean {
   return normalizePath(filePath).split("/").includes("artifacts");
 }
 
+function isLegacyPath(filePath: string): boolean {
+  const normalizedPath = normalizePath(filePath).toLowerCase();
+  return normalizedPath.includes("/legacy/")
+    || normalizedPath.includes("/legacy-")
+    || normalizedPath.includes("-legacy/")
+    || normalizedPath.includes("/legacy.");
+}
+
+function isPeripheralScriptPath(filePath: string): boolean {
+  const normalizedPath = normalizePath(filePath).toLowerCase();
+  return normalizedPath.includes("/scripts/") || normalizedPath.endsWith("/script.py");
+}
+
 function scorePathAffinity(candidatePath: string, focusPaths: string[]): number {
   const candidateSegments = tokenizePath(candidatePath);
   let best = 0;
@@ -875,13 +906,16 @@ function getExplicitChangeRank(filePath: string): number {
   return 0;
 }
 
-function shouldSkipFocusedCandidate(candidate: RankedFile, taskType?: TaskPacketType): boolean {
+function shouldSkipFocusedCandidate(candidate: RankedFile, taskType?: TaskPacketType, hasExplicitChanges?: boolean): boolean {
   if (candidate.isExplicitChange) {
     return false;
   }
 
   if (taskType === "bug-fix" || taskType === "pr-review") {
     if (isDocumentationLike(candidate.file.path)) {
+      return true;
+    }
+    if (hasExplicitChanges && (isLegacyPath(candidate.file.path) || isPeripheralScriptPath(candidate.file.path))) {
       return true;
     }
     if (candidate.informativeMatches.length === 0) {
@@ -896,12 +930,17 @@ function shouldSkipFocusedFallbackCandidate(
   candidate: RankedFile,
   changedFiles: Set<string>,
   taskType?: TaskPacketType,
+  hasExplicitChanges?: boolean,
 ): boolean {
   if (!taskType || taskType === "task") {
     return false;
   }
 
   if (isDocumentationLike(candidate.file.path)) {
+    return true;
+  }
+
+  if (hasExplicitChanges && (isLegacyPath(candidate.file.path) || isPeripheralScriptPath(candidate.file.path))) {
     return true;
   }
 

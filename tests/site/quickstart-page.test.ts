@@ -29,6 +29,7 @@ test("quickstart site includes the core install and usage path", () => {
     "cartograph install openclaw",
     "cartograph install mcp",
     "build_task_packet",
+    "shared dependency hubs",
     "io.github.anthony-maio/cartograph",
     "registry.modelcontextprotocol.io",
     "use-cartograph",

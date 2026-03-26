@@ -258,6 +258,8 @@ test("buildTaskPacket keeps bug-fix packets focused on explicit code changes ins
   );
   assert.ok(packet.keyFiles.some((file) => file.path === "convert_hf_to_gguf.py"));
   assert.ok(!packet.keyFiles.some((file) => file.path.includes("tools/server/webui")));
+  assert.ok(!packet.keyFiles.some((file) => file.path.includes("legacy-models")));
+  assert.ok(!packet.keyFiles.some((file) => file.path.includes("/gguf/scripts/")));
   assert.ok(packet.details.suspectedFaultSites.includes("convert_hf_to_gguf.py"));
   assert.ok(packet.details.suspectedFaultSites.includes("tools/mtmd/models/dots_ocr.cpp"));
   assert.ok(packet.validationTargets.some((target) => target.path === "gguf-py/tests/test_convert_hf_to_gguf_dots_ocr.py"));
@@ -304,4 +306,139 @@ test("buildTaskPacket hydrates explicit changed files even when static analysis 
   assert.ok(packet.keyFiles.some((file) => file.path === "scripts/oversized-converter.py"));
   assert.ok(packet.minimalContext.some((file) => file.path === "scripts/oversized-converter.py"));
   assert.ok(packet.details.suspectedFaultSites.includes("scripts/oversized-converter.py"));
+});
+
+test("buildTaskPacket prefers shared dependencies over generic utility scripts when sparse graphs hide direct change neighbors", () => {
+  const sparseFiles: FileNode[] = [
+    {
+      path: "tools/mtmd/models/dots_ocr.cpp",
+      language: "cpp",
+      lines: 220,
+      bytes: 7600,
+      imports: [],
+      exports: [],
+      importanceScore: 0,
+    },
+    {
+      path: "convert_hf_to_gguf.py",
+      language: "python",
+      lines: 4300,
+      bytes: 120000,
+      imports: [],
+      exports: ["DotsOCRVisionModel"],
+      importanceScore: 0,
+    },
+    {
+      path: "models/dots.ocr/modeling_dots_ocr_vllm.py",
+      language: "python",
+      lines: 410,
+      bytes: 9600,
+      imports: [],
+      exports: ["DotsOCRModel"],
+      importanceScore: 20,
+    },
+    {
+      path: "gguf-py/tests/test_convert_hf_to_gguf_dots_ocr.py",
+      language: "python",
+      lines: 110,
+      bytes: 4200,
+      imports: [],
+      exports: [],
+      importanceScore: 3,
+    },
+    {
+      path: "gguf-py/gguf/gguf.py",
+      language: "python",
+      lines: 900,
+      bytes: 28000,
+      imports: [],
+      exports: ["GGUFWriter"],
+      importanceScore: 50,
+    },
+    {
+      path: "gguf-py/gguf/constants.py",
+      language: "python",
+      lines: 140,
+      bytes: 3600,
+      imports: [],
+      exports: ["GGUF_CONSTANTS"],
+      importanceScore: 24,
+    },
+    {
+      path: "gguf-py/gguf/scripts/gguf_convert_endian.py",
+      language: "python",
+      lines: 180,
+      bytes: 5200,
+      imports: ["gguf-py/gguf/gguf.py"],
+      exports: ["convertEndian"],
+      importanceScore: 20,
+    },
+    {
+      path: "gguf-py/gguf/scripts/gguf_hash.py",
+      language: "python",
+      lines: 160,
+      bytes: 4800,
+      imports: ["gguf-py/gguf/gguf.py"],
+      exports: ["hashGguf"],
+      importanceScore: 20,
+    },
+    {
+      path: "examples/llama.android/lib/src/main/cpp/logging.h",
+      language: "cpp",
+      lines: 120,
+      bytes: 3200,
+      imports: [],
+      exports: ["AndroidLogger"],
+      importanceScore: 18,
+    },
+    {
+      path: "examples/llama.android/lib/src/main/cpp/jni.cpp",
+      language: "cpp",
+      lines: 210,
+      bytes: 6200,
+      imports: ["examples/llama.android/lib/src/main/cpp/logging.h"],
+      exports: ["registerJni"],
+      importanceScore: 12,
+    },
+    {
+      path: "examples/llama.android/lib/src/main/cpp/context.cpp",
+      language: "cpp",
+      lines: 240,
+      bytes: 7000,
+      imports: ["examples/llama.android/lib/src/main/cpp/logging.h"],
+      exports: ["createContext"],
+      importanceScore: 12,
+    },
+  ];
+
+  const sparseEdges: DependencyEdge[] = [
+    { from: "gguf-py/gguf/scripts/gguf_convert_endian.py", to: "gguf-py/gguf/gguf.py" },
+    { from: "gguf-py/gguf/scripts/gguf_convert_endian.py", to: "gguf-py/gguf/constants.py" },
+    { from: "gguf-py/gguf/scripts/gguf_hash.py", to: "gguf-py/gguf/gguf.py" },
+    { from: "gguf-py/gguf/scripts/gguf_hash.py", to: "gguf-py/gguf/constants.py" },
+    { from: "examples/llama.android/lib/src/main/cpp/jni.cpp", to: "examples/llama.android/lib/src/main/cpp/logging.h" },
+    { from: "examples/llama.android/lib/src/main/cpp/context.cpp", to: "examples/llama.android/lib/src/main/cpp/logging.h" },
+  ];
+
+  const packet = buildTaskPacket({
+    repoId: "sparse-llama-like-repo",
+    repoName: "sparse-llama-like-repo",
+    taskType: "bug-fix",
+    taskSummary: "Fix the tools/mtmd/models/dots_ocr.cpp adapter bug and the DotsOCR GGUF conversion path in convert_hf_to_gguf.py",
+    files: sparseFiles,
+    edges: sparseEdges,
+    changedFiles: [
+      "tools/mtmd/models/dots_ocr.cpp",
+      "convert_hf_to_gguf.py",
+      "gguf-py/tests/test_convert_hf_to_gguf_dots_ocr.py",
+    ],
+  });
+
+  assert.ok(packet.dependencyHubs.some((hub) => hub.path === "gguf-py/gguf/gguf.py"));
+  assert.ok(!packet.dependencyHubs.some((hub) => hub.path === "gguf-py/gguf/scripts/gguf_convert_endian.py"));
+  assert.ok(!packet.dependencyHubs.some((hub) => hub.path === "gguf-py/gguf/scripts/gguf_hash.py"));
+  assert.ok(!packet.dependencyHubs.some((hub) => hub.path === "examples/llama.android/lib/src/main/cpp/logging.h"));
+  assert.ok(!packet.keyFiles.some((file) => file.path === "gguf-py/gguf/scripts/gguf_convert_endian.py"));
+  assert.ok(!packet.keyFiles.some((file) => file.path === "gguf-py/gguf/scripts/gguf_hash.py"));
+  assert.ok(!packet.keyFiles.some((file) => file.path === "examples/llama.android/lib/src/main/cpp/logging.h"));
 });

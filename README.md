@@ -88,7 +88,7 @@ cartograph analyze ./my-project --static --json
 cartograph context ./my-project --task "add user authentication" --json
 
 # Typed task packet
-cartograph packet ./my-project --type bug-fix --task "fix auth refresh bug"
+cartograph packet ./my-project --type bug-fix --task "fix auth refresh bug" --changed src/auth/service.ts tests/auth/service.test.ts
 
 # Full wiki output
 cartograph wiki ./my-project -p gemini -k $CARTOGRAPH_API_KEY -o wiki.md
@@ -152,6 +152,8 @@ Tools:
 - `analyze_repo`: score files, map dependencies, and return top file contents for a local repo or GitHub URL
 - `get_file_contents`: fetch full contents for specific files after analysis
 - `build_task_packet`: return a typed task packet with key files, dependency hubs, validation targets, risks, and task-specific details
+
+Bug-fix packets are tuned to stay focused when you provide `--changed` or `changed_files`: they keep explicit change surfaces in view, prefer exact validation targets, and bias toward shared dependencies over peripheral utility scripts.
 
 If you want Cartograph's packaged MCP snippet, run:
 
