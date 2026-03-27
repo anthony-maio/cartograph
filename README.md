@@ -218,6 +218,19 @@ These assets are meant to pass run IDs and artifact paths between steps instead 
 
 The Claude plugin marketplace in this repo ships the same skills and agents, plus plugin-first slash commands and a bundled Cartograph MCP server.
 
+## Task Packet Benchmark
+
+This repo includes a public benchmark pack for task packets under [`benchmarks/task-packets`](./benchmarks/task-packets).
+
+Use it to compare packet quality across large visible repos with a stable set of task prompts:
+
+```bash
+npm run benchmark:task-packets -- --list
+npm run benchmark:task-packets -- --case llama-cpp-bug-fix --dry-run
+```
+
+The benchmark runner writes packet artifacts to `benchmarks/task-packets/output/`, which is gitignored.
+
 ## Development
 
 ```bash

@@ -8,3 +8,4 @@ dist/
 Thumbs.db
 .tools/
 .mcpregistry_*
+benchmarks/task-packets/output/

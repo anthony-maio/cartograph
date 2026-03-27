@@ -46,6 +46,7 @@
     "start:mcp": "node dist/mcp.cjs",
     "check": "tsc",
     "pack:smoke": "node scripts/pack-smoke.mjs",
+    "benchmark:task-packets": "node scripts/task-packet-benchmark.mjs",
     "release:check": "npm test && npm run check && npm run build && npm run pack:smoke",
     "test": "node --import tsx --test",
     "test:watch": "node --import tsx --test --watch"

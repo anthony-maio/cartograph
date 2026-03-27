@@ -1,0 +1,66 @@
+{
+  "version": "1",
+  "cases": [
+    {
+      "id": "llama-cpp-bug-fix",
+      "repo": "https://github.com/ggml-org/llama.cpp",
+      "packetType": "bug-fix",
+      "task": "Fix the Dots OCR adapter bug in tools/mtmd/models/dots_ocr.cpp and the GGUF conversion path in convert_hf_to_gguf.py.",
+      "changedFiles": [
+        "tools/mtmd/models/dots_ocr.cpp",
+        "convert_hf_to_gguf.py",
+        "gguf-py/tests/test_convert_hf_to_gguf_dots_ocr.py"
+      ],
+      "why": "Mixed C/C++ and Python repo with sparse dependency graphs, explicit converter paths, and strong opportunities for false-positive utility files."
+    },
+    {
+      "id": "vscode-pr-review",
+      "repo": "https://github.com/microsoft/vscode",
+      "packetType": "pr-review",
+      "task": "Review a change to extension host startup and activation ordering for blast radius, validation, and likely regression surfaces.",
+      "why": "Large TypeScript monorepo with high fan-in services and broad UI or extension-host blast radius."
+    },
+    {
+      "id": "nextjs-trace-flow",
+      "repo": "https://github.com/vercel/next.js",
+      "packetType": "trace-flow",
+      "task": "Trace request handling from an App Router entry point to route execution for a server-rendered page.",
+      "why": "Strong mixed frontend, runtime, and compiler wiring with monorepo boundaries that can leak unrelated files into a packet."
+    },
+    {
+      "id": "fastapi-bug-fix",
+      "repo": "https://github.com/fastapi/fastapi",
+      "packetType": "bug-fix",
+      "task": "Fix a regression where dependency injection errors surface as internal server errors instead of the expected validation response.",
+      "why": "Clean Python framework repo that should act as a control case for focused packets and exact validation targets."
+    },
+    {
+      "id": "open-webui-task",
+      "repo": "https://github.com/open-webui/open-webui",
+      "packetType": "task",
+      "task": "Build a task packet for fixing model selection persistence across backend state and frontend UI surfaces.",
+      "why": "Polyglot agent application repo with frontend and backend boundaries that should reward structured task packets."
+    },
+    {
+      "id": "kubernetes-trace-flow",
+      "repo": "https://github.com/kubernetes/kubernetes",
+      "packetType": "trace-flow",
+      "task": "Trace a deployment rollout from API admission through controller reconciliation to pod creation.",
+      "why": "Large Go control-plane repo that stresses scale, orchestration, and unrelated subsystem leakage."
+    },
+    {
+      "id": "home-assistant-change-request",
+      "repo": "https://github.com/home-assistant/core",
+      "packetType": "change-request",
+      "task": "Plan a focused change for improving device state refresh scheduling in an integration without widening the packet to unrelated integrations.",
+      "why": "Large modular Python repo with plugin-style boundaries and many similarly named files."
+    },
+    {
+      "id": "pytorch-bug-fix",
+      "repo": "https://github.com/pytorch/pytorch",
+      "packetType": "bug-fix",
+      "task": "Fix a regression in compiled autograd path selection between Python entry points and the C++ dispatcher.",
+      "why": "Extreme mixed Python and C++ stress case for noisy dependency graphs and multiple runtime layers."
+    }
+  ]
+}
