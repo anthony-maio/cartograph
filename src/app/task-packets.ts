@@ -142,9 +142,9 @@ export function buildTaskPacket(opts: BuildTaskPacketOptions): TaskPacket {
     hasExplicitChanges: changedFiles.size > 0,
   }).map(toFileRef);
   const minimalContext = selectPacketFiles(rankedFiles, changedFiles, 4).map(toFileRef);
-  const dependencyHubs = selectDependencyHubs(files, hubs, rankedFiles, changedFiles, informativeTokens, keyFiles, neighborMap);
+  const dependencyHubs = selectDependencyHubs(files, hubs, rankedFiles, changedFiles, informativeTokens, keyFiles, neighborMap, opts.taskType);
   const entryPoints = selectEntryPoints(rankedFiles, changedFiles, opts.taskType);
-  const validationTargets = selectValidationTargets(files, tokens, keyFiles, changedFiles);
+  const validationTargets = selectValidationTargets(files, tokens, keyFiles, changedFiles, opts.taskType);
 
   const base = {
     taskType: opts.taskType,
@@ -231,8 +231,13 @@ function rankFile(
   taskType: TaskPacketType,
 ): RankedFile {
   const normalizedPath = normalizePath(file.path);
-  const haystack = `${normalizedPath} ${file.exports.join(" ")} ${file.imports.join(" ")}`.toLowerCase();
-  const matchedTokens = tokens.filter((token) => haystack.includes(token));
+  const primaryHaystack = `${normalizedPath} ${file.exports.join(" ")}`.toLowerCase();
+  const importHaystack = file.imports.join(" ").toLowerCase();
+  const directMatches = tokens.filter((token) => matchesToken(primaryHaystack, token));
+  const importOnlyMatches = tokens.filter(
+    (token) => !directMatches.includes(token) && matchesToken(importHaystack, token),
+  );
+  const matchedTokens = [...directMatches, ...importOnlyMatches];
   const informativeMatches = matchedTokens.filter((token) => !LOW_SIGNAL_TOKENS.has(token));
   const hubStats = hubs.get(normalizedPath) ?? { inboundCount: 0, outboundCount: 0 };
   const isExplicitChange = changedFiles.has(normalizedPath);
@@ -242,8 +247,13 @@ function rankFile(
   const reasons: string[] = [];
 
   if (matchedTokens.length > 0) {
-    relevanceScore += matchedTokens.reduce((score, token) => score + getTokenWeight(token), 0);
-    reasons.push(`Matches task terms: ${(informativeMatches.length > 0 ? informativeMatches : matchedTokens).join(", ")}`);
+    relevanceScore += directMatches.reduce((score, token) => score + getTokenWeight(token), 0);
+    relevanceScore += importOnlyMatches.reduce((score, token) => score + Math.ceil(getTokenWeight(token) / 2), 0);
+    const reasonTokens =
+      (informativeMatches.length > 0 ? informativeMatches : matchedTokens).filter((token) =>
+        directMatches.includes(token),
+      );
+    reasons.push(`Matches task terms: ${(reasonTokens.length > 0 ? reasonTokens : informativeMatches.length > 0 ? informativeMatches : matchedTokens).join(", ")}`);
   }
 
   if (isExplicitChange) {
@@ -270,6 +280,16 @@ function rankFile(
     reasons.push("Documentation path");
   }
 
+  if (!isExplicitChange && isDocsOrExamplePath(file.path)) {
+    if (taskType === "bug-fix" || taskType === "pr-review") {
+      relevanceScore -= 52;
+      reasons.push("Docs/example path");
+    } else if (taskType === "trace-flow") {
+      relevanceScore -= 24;
+      reasons.push("Docs/example path");
+    }
+  }
+
   if (!isExplicitChange && isArtifactPath(file.path) && taskType === "bug-fix") {
     relevanceScore -= 18;
     reasons.push("Generated artifact path");
@@ -288,8 +308,11 @@ function rankFile(
   }
 
   if (isEntryPoint(file.path)) {
-    relevanceScore += taskType === "trace-flow" ? 24 : 6;
-    reasons.push("Entry-point file");
+    const traceFlowEntryPoint = taskType !== "trace-flow" || informativeMatches.length > 0;
+    relevanceScore += taskType === "trace-flow" ? (traceFlowEntryPoint ? 24 : 0) : 6;
+    if (taskType !== "trace-flow" || traceFlowEntryPoint) {
+      reasons.push("Entry-point file");
+    }
   }
 
   if (isTestFile(file.path)) {
@@ -451,8 +474,10 @@ function selectDependencyHubs(
   informativeTokens: string[],
   keyFiles: TaskPacketFileRef[],
   neighborMap: Map<string, Set<string>>,
+  taskType: TaskPacketType,
 ): TaskPacketDependencyHub[] {
   const keyFilePaths = new Set(keyFiles.map((file) => normalizePath(file.path)));
+  const focusRoots = collectTopLevelSegments([...Array.from(changedFiles), ...Array.from(keyFilePaths)]);
   const directChangedNeighbors = new Set<string>();
   for (const changedFile of changedFiles) {
     for (const neighbor of neighborMap.get(changedFile) ?? []) {
@@ -475,11 +500,13 @@ function selectDependencyHubs(
     .map((file) => {
       const normalizedPath = normalizePath(file.path);
       const stats = hubs.get(normalizedPath) ?? { inboundCount: 0, outboundCount: 0 };
-      const tokenMatches = informativeTokens.filter((token) => normalizedPath.toLowerCase().includes(token)).length;
+      const tokenMatches = informativeTokens.filter((token) => matchesToken(normalizedPath.toLowerCase(), token)).length;
       const pathAffinity = scorePathAffinity(normalizedPath, focusPaths);
       const directChangedNeighbor = directChangedNeighbors.has(normalizedPath);
       const inKeyFiles = keyFilePaths.has(normalizedPath);
       const explicitChange = changedFiles.has(normalizedPath);
+      const topLevel = getTopLevelSegment(normalizedPath);
+      const inFocusRoot = focusRoots.size === 0 || (topLevel ? focusRoots.has(topLevel) : true);
       return {
         path: file.path,
         inboundCount: stats.inboundCount,
@@ -493,17 +520,35 @@ function selectDependencyHubs(
           (pathAffinity * 8) +
           (inKeyFiles ? 12 : 0) +
           (explicitChange ? 10 : 0) +
-          (directChangedNeighbor ? 12 : 0),
+          (directChangedNeighbor ? 12 : 0) +
+          (inFocusRoot ? 8 : -18),
         pathAffinity,
         tokenMatches,
         isTopRanked: topRanked.has(normalizedPath),
         directChangedNeighbor,
         inKeyFiles,
         explicitChange,
+        inFocusRoot,
       };
     })
     .filter((hub) => hub.inboundCount + hub.outboundCount > 0)
     .filter((hub) => hub.pathAffinity > 0 || hub.tokenMatches > 0 || hub.isTopRanked)
+    .filter((hub) => {
+      if (hub.explicitChange) {
+        return true;
+      }
+
+      if (taskType === "bug-fix" || taskType === "pr-review" || taskType === "trace-flow") {
+        if (isTestFile(hub.path) || isDocsOrExamplePath(hub.path) || isFixtureLikePath(hub.path)) {
+          return false;
+        }
+        if (focusRoots.size > 0 && !hub.inFocusRoot && !hub.inKeyFiles) {
+          return false;
+        }
+      }
+
+      return true;
+    })
     .filter((hub) => {
       if (changedFiles.size === 0) {
         return true;
@@ -523,6 +568,7 @@ function selectDependencyHubs(
       directChangedNeighbor: _directChangedNeighbor,
       inKeyFiles: _inKeyFiles,
       explicitChange: _explicitChange,
+      inFocusRoot: _inFocusRoot,
       ...hub
     }) => hub);
 }
@@ -542,8 +588,15 @@ function selectEntryPoints(rankedFiles: RankedFile[], changedFiles: Set<string>,
     .map((candidate) => candidate.file.path);
 }
 
-function selectValidationTargets(files: FileNode[], tokens: string[], keyFiles: TaskPacketFileRef[], changedFiles: Set<string>): TaskPacketValidationTarget[] {
+function selectValidationTargets(
+  files: FileNode[],
+  tokens: string[],
+  keyFiles: TaskPacketFileRef[],
+  changedFiles: Set<string>,
+  taskType: TaskPacketType,
+): TaskPacketValidationTarget[] {
   const keyStems = new Set(keyFiles.map((file) => fileStem(file.path)));
+  const keyPaths = keyFiles.map((file) => file.path);
   const candidates = files
     .filter((file) => isTestFile(file.path))
     .map((file) => {
@@ -551,10 +604,16 @@ function selectValidationTargets(files: FileNode[], tokens: string[], keyFiles: 
       let score = 0;
       const reasons: string[] = [];
       const directChangedMatch = Array.from(changedFiles).some((changed) => normalizedPath.includes(fileStem(changed).toLowerCase()));
-      const matchedTokens = tokens.filter((token) => normalizedPath.includes(token));
+      const matchedTokens = tokens.filter((token) => matchesToken(normalizedPath, token));
+      const strongValidation = isStrongValidationPath(file.path);
+      const pathAffinity = scorePathAffinity(normalizedPath, keyPaths);
       if (matchedTokens.length > 0) {
         score += matchedTokens.length * 10;
         reasons.push(`Matches task terms: ${matchedTokens.join(", ")}`);
+      }
+      if (pathAffinity > 0) {
+        score += pathAffinity * 6;
+        reasons.push("Near selected source surface");
       }
       for (const stem of keyStems) {
         if (stem && normalizedPath.includes(stem.toLowerCase())) {
@@ -567,7 +626,21 @@ function selectValidationTargets(files: FileNode[], tokens: string[], keyFiles: 
         score += 15;
         reasons.push("Likely covers changed file");
       }
-      return { path: file.path, reason: reasons[0] ?? "Nearby test surface", score, directChangedMatch };
+      if (strongValidation) {
+        score += 10;
+      } else {
+        score -= 12;
+      }
+      if (isHelperTestPath(file.path)) {
+        score -= 24;
+      }
+      if (taskType === "trace-flow" && isFixtureLikePath(file.path)) {
+        score -= 30;
+      }
+      if ((taskType === "bug-fix" || taskType === "trace-flow") && isDocsOrExamplePath(file.path)) {
+        score -= taskType === "trace-flow" ? 20 : 12;
+      }
+      return { path: file.path, reason: reasons[0] ?? "Nearby test surface", score, directChangedMatch, strongValidation };
     })
     .filter((candidate) => candidate.score > 0);
 
@@ -576,10 +649,15 @@ function selectValidationTargets(files: FileNode[], tokens: string[], keyFiles: 
       ? candidates.filter((candidate) => candidate.directChangedMatch)
       : candidates;
 
-  return filteredCandidates
+  const focusedCandidates =
+    filteredCandidates.some((candidate) => candidate.strongValidation)
+      ? filteredCandidates.filter((candidate) => candidate.strongValidation)
+      : filteredCandidates;
+
+  return focusedCandidates
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)
-    .map(({ score: _score, directChangedMatch: _directChangedMatch, ...target }) => target);
+    .map(({ score: _score, directChangedMatch: _directChangedMatch, strongValidation: _strongValidation, ...target }) => target);
 }
 
 function buildRisks(
@@ -699,7 +777,9 @@ function buildBlastRadius(changedFiles: Set<string>, neighborMap: Map<string, Se
 function buildPathCandidates(entryPoints: string[], minimalContext: TaskPacketFileRef[], neighborMap: Map<string, Set<string>>): string[] {
   const paths: string[] = [];
   for (const entryPoint of entryPoints.slice(0, 2)) {
-    const neighbors = Array.from(neighborMap.get(normalizePath(entryPoint)) ?? []).slice(0, 2);
+    const neighbors = Array.from(neighborMap.get(normalizePath(entryPoint)) ?? [])
+      .filter((neighbor) => !isTestFile(neighbor) && !isDocsOrExamplePath(neighbor) && !isFixtureLikePath(neighbor))
+      .slice(0, 2);
     if (neighbors.length === 0 && minimalContext[0]) {
       paths.push(`${entryPoint} -> ${minimalContext[0].path}`);
       continue;
@@ -818,6 +898,46 @@ function isArtifactPath(filePath: string): boolean {
   return normalizePath(filePath).split("/").includes("artifacts");
 }
 
+function isDocsOrExamplePath(filePath: string): boolean {
+  const segments = normalizePath(filePath).toLowerCase().split("/");
+  return segments.includes("docs")
+    || segments.includes("docs_src")
+    || segments.includes("tutorial")
+    || segments.includes("tutorials")
+    || segments.includes("example")
+    || segments.includes("examples");
+}
+
+function isFixtureLikePath(filePath: string): boolean {
+  const segments = normalizePath(filePath).toLowerCase().split("/");
+  return segments.includes("fixture")
+    || segments.includes("fixtures")
+    || segments.includes("template")
+    || segments.includes("templates");
+}
+
+function isStrongValidationPath(filePath: string): boolean {
+  const normalizedPath = normalizePath(filePath).toLowerCase();
+  const baseName = path.posix.basename(normalizedPath);
+  if (/\.(test|spec)\.[^.]+$/.test(baseName)) {
+    return true;
+  }
+  if (baseName.startsWith("test_") || baseName.startsWith("test-")) {
+    return true;
+  }
+  return normalizedPath.includes("/e2e/") || normalizedPath.includes("/integration/");
+}
+
+function isHelperTestPath(filePath: string): boolean {
+  const normalizedPath = normalizePath(filePath).toLowerCase();
+  const segments = normalizedPath.split("/");
+  const baseName = path.posix.basename(normalizedPath);
+  return segments.includes("lib")
+    || segments.includes("helpers")
+    || segments.includes("helper")
+    || baseName.includes("utils");
+}
+
 function isLegacyPath(filePath: string): boolean {
   const normalizedPath = normalizePath(filePath).toLowerCase();
   return normalizedPath.includes("/legacy/")
@@ -847,6 +967,42 @@ function tokenizePath(filePath: string): string[] {
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter((segment) => segment.length >= 3 && !LOW_SIGNAL_PATH_SEGMENTS.has(segment));
+}
+
+function matchesToken(haystack: string, token: string): boolean {
+  if (haystack.includes(token)) {
+    return true;
+  }
+
+  if (token.endsWith("y")) {
+    return haystack.includes(`${token.slice(0, -1)}ies`);
+  }
+
+  if (token.endsWith("ies")) {
+    return haystack.includes(`${token.slice(0, -3)}y`);
+  }
+
+  if (token.endsWith("s")) {
+    return haystack.includes(token.slice(0, -1));
+  }
+
+  return haystack.includes(`${token}s`);
+}
+
+function getTopLevelSegment(filePath: string): string | null {
+  const [topLevel] = normalizePath(filePath).split("/");
+  return topLevel && !topLevel.includes(".") ? topLevel : null;
+}
+
+function collectTopLevelSegments(filePaths: string[]): Set<string> {
+  const segments = new Set<string>();
+  for (const filePath of filePaths) {
+    const topLevel = getTopLevelSegment(filePath);
+    if (topLevel) {
+      segments.add(topLevel);
+    }
+  }
+  return segments;
 }
 
 function inferLanguageFromPath(filePath: string): string {
@@ -915,12 +1071,19 @@ function shouldSkipFocusedCandidate(candidate: RankedFile, taskType?: TaskPacket
     if (isDocumentationLike(candidate.file.path)) {
       return true;
     }
+    if (isDocsOrExamplePath(candidate.file.path)) {
+      return true;
+    }
     if (hasExplicitChanges && (isLegacyPath(candidate.file.path) || isPeripheralScriptPath(candidate.file.path))) {
       return true;
     }
     if (candidate.informativeMatches.length === 0) {
       return true;
     }
+  }
+
+  if (taskType === "trace-flow" && (isDocsOrExamplePath(candidate.file.path) || isFixtureLikePath(candidate.file.path))) {
+    return true;
   }
 
   return false;
@@ -937,6 +1100,10 @@ function shouldSkipFocusedFallbackCandidate(
   }
 
   if (isDocumentationLike(candidate.file.path)) {
+    return true;
+  }
+
+  if (isDocsOrExamplePath(candidate.file.path) || isFixtureLikePath(candidate.file.path)) {
     return true;
   }
 

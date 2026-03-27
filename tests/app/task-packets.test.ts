@@ -442,3 +442,208 @@ test("buildTaskPacket prefers shared dependencies over generic utility scripts w
   assert.ok(!packet.keyFiles.some((file) => file.path === "gguf-py/gguf/scripts/gguf_hash.py"));
   assert.ok(!packet.keyFiles.some((file) => file.path === "examples/llama.android/lib/src/main/cpp/logging.h"));
 });
+
+test("buildTaskPacket downranks docs and tutorial example paths for framework bug-fix packets", () => {
+  const fastapiLikeFiles: FileNode[] = [
+    {
+      path: "fastapi/dependencies/utils.py",
+      language: "python",
+      lines: 320,
+      bytes: 9600,
+      imports: ["fastapi/exceptions.py"],
+      exports: ["solveDependencies"],
+      importanceScore: 45,
+    },
+    {
+      path: "fastapi/exceptions.py",
+      language: "python",
+      lines: 180,
+      bytes: 5200,
+      imports: [],
+      exports: ["RequestValidationError"],
+      importanceScore: 36,
+    },
+    {
+      path: "fastapi/routing.py",
+      language: "python",
+      lines: 620,
+      bytes: 17200,
+      imports: ["fastapi/dependencies/utils.py"],
+      exports: ["APIRoute"],
+      importanceScore: 54,
+    },
+    {
+      path: "tests/test_dependency_errors.py",
+      language: "python",
+      lines: 120,
+      bytes: 3400,
+      imports: ["fastapi/dependencies/utils.py", "fastapi/exceptions.py"],
+      exports: [],
+      importanceScore: 18,
+    },
+    {
+      path: "docs_src/bigger_applications/app_an_py310/main.py",
+      language: "python",
+      lines: 140,
+      bytes: 3600,
+      imports: ["fastapi/dependencies/utils.py"],
+      exports: [],
+      importanceScore: 33,
+    },
+    {
+      path: "docs_src/dependency_testing/tutorial001_py310.py",
+      language: "python",
+      lines: 120,
+      bytes: 3200,
+      imports: ["fastapi/dependencies/utils.py"],
+      exports: [],
+      importanceScore: 20,
+    },
+    {
+      path: "docs/en/docs/reference/fastapi.md",
+      language: "markdown",
+      lines: 240,
+      bytes: 7800,
+      imports: [],
+      exports: [],
+      importanceScore: 80,
+    },
+  ];
+
+  const fastapiLikeEdges: DependencyEdge[] = [
+    { from: "fastapi/routing.py", to: "fastapi/dependencies/utils.py" },
+    { from: "fastapi/dependencies/utils.py", to: "fastapi/exceptions.py" },
+    { from: "tests/test_dependency_errors.py", to: "fastapi/dependencies/utils.py" },
+    { from: "tests/test_dependency_errors.py", to: "fastapi/exceptions.py" },
+    { from: "docs_src/bigger_applications/app_an_py310/main.py", to: "fastapi/dependencies/utils.py" },
+    { from: "docs_src/dependency_testing/tutorial001_py310.py", to: "fastapi/dependencies/utils.py" },
+  ];
+
+  const packet = buildTaskPacket({
+    repoId: "fastapi-like-repo",
+    repoName: "fastapi-like-repo",
+    taskType: "bug-fix",
+    taskSummary: "Fix a regression where dependency injection errors surface as internal server errors instead of the expected validation response",
+    files: fastapiLikeFiles,
+    edges: fastapiLikeEdges,
+  });
+
+  assert.ok(packet.keyFiles.some((file) => file.path === "fastapi/dependencies/utils.py"));
+  assert.ok(packet.keyFiles.some((file) => file.path === "fastapi/exceptions.py"));
+  assert.ok(!packet.keyFiles.some((file) => file.path.startsWith("docs_src/")));
+  assert.ok(!packet.dependencyHubs.some((hub) => hub.path.startsWith("docs/")));
+  assert.ok(!packet.dependencyHubs.some((hub) => hub.path.startsWith("docs_src/")));
+  assert.equal(packet.validationTargets[0]?.path, "tests/test_dependency_errors.py");
+  assert.equal(packet.details.suspectedFaultSites[0], "fastapi/dependencies/utils.py");
+});
+
+test("buildTaskPacket keeps trace-flow hubs and validation targets near source surfaces instead of fixtures", () => {
+  const nextLikeFiles: FileNode[] = [
+    {
+      path: "packages/next/src/shared/lib/router/routes/app.ts",
+      language: "typescript",
+      lines: 240,
+      bytes: 6800,
+      imports: ["packages/next/src/server/route-modules/app-page/module.ts"],
+      exports: ["appRouteMatcher"],
+      importanceScore: 92,
+    },
+    {
+      path: "packages/next/src/server/route-modules/app-page/module.ts",
+      language: "typescript",
+      lines: 310,
+      bytes: 9400,
+      imports: ["packages/next/src/server/next.ts"],
+      exports: ["AppPageRouteModule"],
+      importanceScore: 86,
+    },
+    {
+      path: "packages/next/src/server/next.ts",
+      language: "typescript",
+      lines: 420,
+      bytes: 12600,
+      imports: [],
+      exports: ["NextServer"],
+      importanceScore: 96,
+    },
+    {
+      path: "packages/next/src/export/routes/app-route.ts",
+      language: "typescript",
+      lines: 190,
+      bytes: 5200,
+      imports: ["packages/next/src/server/route-modules/app-page/module.ts"],
+      exports: ["exportAppRoute"],
+      importanceScore: 72,
+    },
+    {
+      path: "test/e2e/app-dir/routing.test.ts",
+      language: "typescript",
+      lines: 220,
+      bytes: 6400,
+      imports: ["test/lib/next-test-utils.ts"],
+      exports: [],
+      importanceScore: 42,
+    },
+    {
+      path: "test/development/mcp-server/fixtures/pages-router-template/pages/index.tsx",
+      language: "typescript",
+      lines: 80,
+      bytes: 1800,
+      imports: [],
+      exports: [],
+      importanceScore: 18,
+    },
+    {
+      path: "test/lib/next-test-utils.ts",
+      language: "typescript",
+      lines: 400,
+      bytes: 11800,
+      imports: [],
+      exports: ["nextTestSetup"],
+      importanceScore: 88,
+    },
+    {
+      path: "turbopack/crates/turbopack-trace-server/src/server.rs",
+      language: "rust",
+      lines: 260,
+      bytes: 7600,
+      imports: [],
+      exports: ["TraceServer"],
+      importanceScore: 84,
+    },
+    {
+      path: "examples/blog/pages/_app.tsx",
+      language: "typescript",
+      lines: 60,
+      bytes: 1600,
+      imports: [],
+      exports: [],
+      importanceScore: 12,
+    },
+  ];
+
+  const nextLikeEdges: DependencyEdge[] = [
+    { from: "packages/next/src/shared/lib/router/routes/app.ts", to: "packages/next/src/server/route-modules/app-page/module.ts" },
+    { from: "packages/next/src/server/route-modules/app-page/module.ts", to: "packages/next/src/server/next.ts" },
+    { from: "packages/next/src/export/routes/app-route.ts", to: "packages/next/src/server/route-modules/app-page/module.ts" },
+    { from: "test/e2e/app-dir/routing.test.ts", to: "test/lib/next-test-utils.ts" },
+    { from: "examples/blog/pages/_app.tsx", to: "packages/next/src/shared/lib/router/routes/app.ts" },
+  ];
+
+  const packet = buildTaskPacket({
+    repoId: "next-like-repo",
+    repoName: "next-like-repo",
+    taskType: "trace-flow",
+    taskSummary: "Trace request handling from an App Router entry point to route execution for a server-rendered page",
+    files: nextLikeFiles,
+    edges: nextLikeEdges,
+  });
+
+  assert.ok(packet.keyFiles.some((file) => file.path === "packages/next/src/shared/lib/router/routes/app.ts"));
+  assert.ok(packet.dependencyHubs.some((hub) => hub.path === "packages/next/src/server/next.ts"));
+  assert.ok(!packet.dependencyHubs.some((hub) => hub.path === "test/lib/next-test-utils.ts"));
+  assert.ok(!packet.dependencyHubs.some((hub) => hub.path === "turbopack/crates/turbopack-trace-server/src/server.rs"));
+  assert.equal(packet.validationTargets[0]?.path, "test/e2e/app-dir/routing.test.ts");
+  assert.ok(!packet.validationTargets.some((target) => target.path.includes("/fixtures/")));
+  assert.ok(!packet.details.pathCandidates.some((candidate) => candidate.includes("examples/blog")));
+});
