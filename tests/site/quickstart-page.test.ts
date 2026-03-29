@@ -34,6 +34,9 @@ test("quickstart site includes the core install and usage path", () => {
     "registry.modelcontextprotocol.io",
     "use-cartograph",
     "repo-surveyor",
+    "benchmark:task-packets",
+    "llama.cpp task packet",
+    "DeepWiki-style brief",
     "5-minute quickstart",
     "privacy.html",
   ]) {

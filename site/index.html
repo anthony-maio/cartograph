@@ -319,7 +319,11 @@ cartograph export run-abc123 --to ./artifacts/wiki.md</code></pre>
     <section class="section section-surface" id="examples">
       <div class="container">
         <div class="section-label">Examples</div>
-        <h2>Common first runs.</h2>
+        <h2>Common first runs and public artifacts.</h2>
+        <p class="section-intro">
+          Cartograph now ships a public benchmark suite plus tracked example artifacts. Use the commands below to
+          generate your own, then compare them to the linked `llama.cpp` packet and DeepWiki-style brief.
+        </p>
         <div class="example-grid">
           <article class="example-card">
             <div class="example-title">Local repo orientation</div>
@@ -343,6 +347,23 @@ cartograph export run-abc123 --to ./artifacts/wiki.md</code></pre>
             <div class="example-title">Documentation output</div>
             <pre class="code-block"><code>cartograph wiki ./my-project --static</code></pre>
             <p>Use this to generate a structured docs pass without rereading the entire tree by hand.</p>
+          </article>
+
+          <article class="example-card">
+            <div class="example-title">Public benchmark suite</div>
+            <pre class="code-block"><code>npm run benchmark:task-packets -- --list
+npm run benchmark:task-packets -- --output benchmarks/task-packets/output</code></pre>
+            <p>Use this to compare packet quality across `llama.cpp`, `vscode`, `next.js`, `fastapi`, `open-webui`, `kubernetes`, `home-assistant`, and `pytorch`.</p>
+          </article>
+
+          <article class="example-card">
+            <div class="example-title">Showcase artifacts</div>
+            <p>See a real bug-fix packet and curated repo brief for `llama.cpp`:</p>
+            <ul class="bullet-list" role="list">
+              <li><a href="https://github.com/anthony-maio/cartograph/blob/main/docs/examples/llama-cpp-task-packet.md" target="_blank" rel="noopener noreferrer">llama.cpp task packet</a></li>
+              <li><a href="https://github.com/anthony-maio/cartograph/blob/main/docs/examples/llama-cpp-task-packet.json" target="_blank" rel="noopener noreferrer">llama.cpp task packet JSON</a></li>
+              <li><a href="https://github.com/anthony-maio/cartograph/blob/main/docs/examples/llama-cpp-deepwiki.md" target="_blank" rel="noopener noreferrer">llama.cpp DeepWiki-style brief</a></li>
+            </ul>
           </article>
         </div>
       </div>

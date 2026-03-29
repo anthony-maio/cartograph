@@ -125,14 +125,11 @@ const CONFIG_PATTERNS = [
 ];
 
 export async function cloneRepo(repoUrl: string, branch?: string): Promise<string> {
-  const tmpDir = path.join(os.tmpdir(), `cartograph-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const tmpDir = path.join(os.tmpdir(), createCloneDirName(process.platform));
   fs.mkdirSync(tmpDir, { recursive: true });
 
   const git = simpleGit();
-  const cloneOptions = ["--depth", "1"];
-  if (branch) {
-    cloneOptions.push("--branch", branch);
-  }
+  const cloneOptions = buildCloneOptions(branch, process.platform);
 
   await git.clone(repoUrl, tmpDir, cloneOptions);
   return tmpDir;
@@ -144,6 +141,22 @@ export function cleanupRepo(dir: string): void {
   } catch {
     // Best effort cleanup
   }
+}
+
+export function buildCloneOptions(branch?: string, platform: NodeJS.Platform = process.platform): string[] {
+  const cloneOptions = ["--depth", "1"];
+  if (branch) {
+    cloneOptions.push("--branch", branch);
+  }
+  if (platform === "win32") {
+    cloneOptions.push("-c", "core.longpaths=true");
+  }
+  return cloneOptions;
+}
+
+export function createCloneDirName(platform: NodeJS.Platform = process.platform): string {
+  const prefix = platform === "win32" ? "cg" : "cartograph";
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function walkDir(dir: string, basePath: string = ""): string[] {

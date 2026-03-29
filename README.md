@@ -231,6 +231,16 @@ npm run benchmark:task-packets -- --case llama-cpp-bug-fix --dry-run
 
 The benchmark runner writes packet artifacts to `benchmarks/task-packets/output/`, which is gitignored.
 
+## Example Artifacts
+
+Tracked examples live under [`docs/examples`](./docs/examples):
+
+- [`llama-cpp-task-packet.md`](./docs/examples/llama-cpp-task-packet.md)
+- [`llama-cpp-task-packet.json`](./docs/examples/llama-cpp-task-packet.json)
+- [`llama-cpp-deepwiki.md`](./docs/examples/llama-cpp-deepwiki.md)
+
+These are useful when you want to show what a focused bug-fix packet and a curated repo brief look like on a large public codebase.
+
 ## Development
 
 ```bash
