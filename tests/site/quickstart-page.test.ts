@@ -10,13 +10,22 @@ test("quickstart site includes the core install and usage path", () => {
   const indexPath = path.join(repoRoot, "site", "index.html");
   const stylePath = path.join(repoRoot, "site", "style.css");
   const privacyPath = path.join(repoRoot, "site", "privacy.html");
+  const examplesIndexPath = path.join(repoRoot, "site", "examples", "index.html");
+  const packetMarkdownPath = path.join(repoRoot, "site", "examples", "llama-cpp-task-packet.md");
+  const packetJsonPath = path.join(repoRoot, "site", "examples", "llama-cpp-task-packet.json");
+  const deepwikiPath = path.join(repoRoot, "site", "examples", "llama-cpp-deepwiki.md");
 
   assert.ok(fs.existsSync(indexPath), "site/index.html should exist");
   assert.ok(fs.existsSync(stylePath), "site/style.css should exist");
   assert.ok(fs.existsSync(privacyPath), "site/privacy.html should exist");
+  assert.ok(fs.existsSync(examplesIndexPath), "site/examples/index.html should exist");
+  assert.ok(fs.existsSync(packetMarkdownPath), "site/examples/llama-cpp-task-packet.md should exist");
+  assert.ok(fs.existsSync(packetJsonPath), "site/examples/llama-cpp-task-packet.json should exist");
+  assert.ok(fs.existsSync(deepwikiPath), "site/examples/llama-cpp-deepwiki.md should exist");
 
   const html = fs.readFileSync(indexPath, "utf-8");
   const privacyHtml = fs.readFileSync(privacyPath, "utf-8");
+  const examplesHtml = fs.readFileSync(examplesIndexPath, "utf-8");
 
   for (const fragment of [
     "@anthony-maio/cartograph",
@@ -32,6 +41,9 @@ test("quickstart site includes the core install and usage path", () => {
     "shared dependency hubs",
     "io.github.anthony-maio/cartograph",
     "registry.modelcontextprotocol.io",
+    "examples/index.html",
+    "examples/llama-cpp-task-packet.md",
+    "examples/llama-cpp-deepwiki.md",
     "use-cartograph",
     "repo-surveyor",
     "benchmark:task-packets",
@@ -41,6 +53,16 @@ test("quickstart site includes the core install and usage path", () => {
     "privacy.html",
   ]) {
     assert.match(html, new RegExp(escapeForRegExp(fragment), "i"));
+  }
+
+  for (const fragment of [
+    "Sample artifacts",
+    "Open markdown packet",
+    "Open JSON packet",
+    "DeepWiki-style summary",
+    "llama.cpp",
+  ]) {
+    assert.match(examplesHtml, new RegExp(escapeForRegExp(fragment), "i"));
   }
 
   for (const fragment of [

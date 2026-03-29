@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartograph Examples</title>
+  <meta name="description" content="Sample Cartograph task packets and DeepWiki-style reports.">
+  <meta name="theme-color" content="#b86b30">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <nav class="site-nav" aria-label="Main navigation">
+    <div class="container-wide nav-inner">
+      <a class="brand" href="../index.html" aria-label="Cartograph home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 52 52" fill="none">
+            <circle cx="26" cy="26" r="22" stroke="currentColor" stroke-opacity="0.28" stroke-width="1.5"/>
+            <circle cx="26" cy="26" r="15" stroke="currentColor" stroke-opacity="0.18" stroke-width="1"/>
+            <path d="M26 9 L31 21 L43 26 L31 31 L26 43 L21 31 L9 26 L21 21 Z" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M26 13 L29 23 L39 26 L29 29 L26 39 L23 29 L13 26 L23 23 Z" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-text">Cartograph</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="../index.html#quickstart">Quickstart</a>
+        <a href="../index.html#examples">Examples</a>
+      </div>
+
+      <div class="nav-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle theme">theme</button>
+        <a class="btn btn-ghost" href="https://github.com/anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a class="btn btn-primary" href="../index.html">Back to site</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main-content">
+    <section class="hero">
+      <div class="container hero-copy">
+        <div class="eyebrow">Sample artifacts</div>
+        <h1>Real outputs from a strong `llama.cpp` packet.</h1>
+        <p class="hero-lead">
+          These files are generated from Cartograph's local analysis path and are included here so people can inspect
+          a focused bug-fix packet and a curated DeepWiki-style repo brief without leaving the site.
+        </p>
+      </div>
+    </section>
+
+    <section class="section section-surface">
+      <div class="container">
+        <div class="section-label">Artifacts</div>
+        <h2>Open the packet, the brief, or the raw export.</h2>
+        <div class="example-grid">
+          <article class="card">
+            <div class="card-kicker">Task packet</div>
+            <h3>Markdown handoff</h3>
+            <p>A prompt-ready bug-fix packet for the Dots OCR adapter and GGUF conversion path in `llama.cpp`.</p>
+            <ul class="bullet-list" role="list">
+              <li><a href="./llama-cpp-task-packet.md">Open markdown packet</a></li>
+              <li><a href="./llama-cpp-task-packet.json">Open JSON packet</a></li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <div class="card-kicker">Repo brief</div>
+            <h3>DeepWiki-style summary</h3>
+            <p>A curated architecture brief covering runtime, GGUF conversion, MTMD adapters, and server/web UI boundaries.</p>
+            <ul class="bullet-list" role="list">
+              <li><a href="./llama-cpp-deepwiki.md">Open curated brief</a></li>
+              <li><a href="./llama-cpp-static-wiki.md">Open raw static export</a></li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-label">Highlights</div>
+        <h2>Why this example is useful.</h2>
+        <div class="comparison-grid">
+          <article class="card card-accent">
+            <div class="card-kicker">Focused</div>
+            <h3>The packet stays on the actual bug surface.</h3>
+            <ul class="bullet-list" role="list">
+              <li>`tools/mtmd/models/dots_ocr.cpp` is the first candidate file.</li>
+              <li>`convert_hf_to_gguf.py` stays in the working set.</li>
+              <li>The exact Dots OCR GGUF test is the top validation target.</li>
+            </ul>
+          </article>
+
+          <article class="card card-muted">
+            <div class="card-kicker">Structured</div>
+            <h3>The repo brief reads like architecture, not a file dump.</h3>
+            <ul class="bullet-list" role="list">
+              <li>Core runtime and `ggml` layers are separated clearly.</li>
+              <li>The GGUF conversion pipeline is explained as a subsystem.</li>
+              <li>The Dots OCR issue is grounded in the right local context.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container-wide footer-inner">
+      <div>
+        <div class="footer-brand">Cartograph</div>
+        <p class="footer-copy">Sample task packets and repo briefs, shipped with the site.</p>
+      </div>
+      <div class="footer-links">
+        <a href="../index.html">Home</a>
+        <a href="./llama-cpp-task-packet.md">Packet</a>
+        <a href="./llama-cpp-deepwiki.md">DeepWiki brief</a>
+        <a href="../privacy.html">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../app.js"></script>
+</body>
+</html>
