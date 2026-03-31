@@ -167,6 +167,19 @@ html[data-theme="light"] .site-nav {
   gap: 1.4rem;
 }
 
+.nav-parent {
+  font-size: 0.7rem;
+  color: inherit;
+  opacity: 0.4;
+  text-decoration: none;
+  margin-right: 0.75rem;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+  letter-spacing: 0.02em;
+}
+.nav-parent:hover { opacity: 0.7; }
+.nav-parent-sep { opacity: 0.4; margin-left: 0.25rem; }
+
 .brand {
   display: inline-flex;
   align-items: center;
