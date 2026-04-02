@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { analyzeFiles, cleanupRepo, cloneRepo, getFileContent } from "../analyzer";
 import { buildTaskPacket, type TaskPacketType } from "./task-packets";
+import { resolveAnalysisContentPolicy } from "./analysis-output";
 
 const TASK_PACKET_TYPES = ["task", "bug-fix", "pr-review", "trace-flow", "change-request"] as const;
 
@@ -27,17 +28,21 @@ export function createCartographMcpServer(): McpServer {
       repo: z.string().describe("GitHub URL or absolute local directory path"),
       top: z.number().optional().default(30).describe("Number of top files to include contents for (default 30)"),
       max_lines: z.number().optional().default(200).describe("Max lines per file (default 200)"),
+      include_contents: z.boolean().optional().default(false).describe("Force embedding top file contents even for compact small-repo mode"),
     },
-    async ({ repo, top, max_lines }) =>
+    async ({ repo, top, max_lines, include_contents }) =>
       withResolvedRepo(repo, async ({ repoDir, repoName }) => {
         const { files, edges } = analyzeFiles(repoDir);
 
         const topFiles = files.slice(0, top);
+        const contentPolicy = resolveAnalysisContentPolicy(files, include_contents);
         const fileContents: Record<string, string> = {};
-        for (const file of topFiles) {
-          const content = getFileContent(repoDir, file.path, max_lines);
-          if (content) {
-            fileContents[file.path] = content;
+        if (contentPolicy.includeContents) {
+          for (const file of topFiles) {
+            const content = getFileContent(repoDir, file.path, max_lines);
+            if (content) {
+              fileContents[file.path] = content;
+            }
           }
         }
 
@@ -61,6 +66,7 @@ export function createCartographMcpServer(): McpServer {
           })),
           dependencies: edges.slice(0, 50).map((edge) => `${edge.from} → ${edge.to}`),
           fileContents,
+          contentPolicy,
         };
 
         return {

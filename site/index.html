@@ -169,11 +169,12 @@ cartograph install mcp</code></pre>
             <div class="step-number">02</div>
             <div>
               <h3>Analyze a repo</h3>
-              <p>Start with static analysis to get ranked files, edges, and top file contents.</p>
+              <p>Start with static analysis to get ranked files and edges. Small repos stay compact by default; add <code>--include-contents</code> when you want embedded snippets.</p>
               <div class="code-card">
                 <div class="code-title">local or GitHub</div>
                 <pre id="analyze-command" class="code-block"><code>cartograph analyze ./my-project --static --json
-cartograph analyze https://github.com/anthony-maio/cartograph --static --json</code></pre>
+cartograph analyze https://github.com/anthony-maio/cartograph --static --json
+cartograph analyze ./my-project --static --json --include-contents</code></pre>
                 <button class="copy-button" type="button" data-copy-target="analyze-command">Copy</button>
               </div>
             </div>

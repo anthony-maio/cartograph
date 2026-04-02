@@ -14,6 +14,7 @@ import { handleInstallCommand } from "./app/commands/install";
 import { handleUninstallCommand } from "./app/commands/uninstall";
 import { handleDoctorCommand } from "./app/commands/doctor";
 import { buildTaskPacket, type TaskPacketType } from "./app/task-packets";
+import { resolveAnalysisContentPolicy } from "./app/analysis-output";
 
 const program = new Command();
 
@@ -28,6 +29,7 @@ program
   .option("-k, --key <key>", "API key (or set CARTOGRAPH_API_KEY env var)")
   .option("-o, --output <path>", "Output file path (default: stdout)")
   .option("--json", "Output raw JSON instead of markdown")
+  .option("--include-contents", "Embed top file contents in analyze output even for compact small-repo mode")
   .option("-c, --context <task>", "Context selection mode: describe the task to get only relevant files")
   .option("-n, --top <number>", "Number of top files to include in static mode", "30")
   .option("-m, --model <model>", "Override model for both fast and strong passes (e.g. qwen3:14b)")
@@ -69,6 +71,7 @@ addAnalysisOptions(
     static: opts.static,
     top: opts.top,
     command: "context",
+    includeContents: opts.includeContents,
   });
 });
 
@@ -120,6 +123,7 @@ function addAnalysisOptions<T extends Command>(command: T): T {
     .option("-k, --key <key>", "API key (or set CARTOGRAPH_API_KEY env var)")
     .option("-o, --output <path>", "Output file path (default: stdout)")
     .option("--json", "Output raw JSON instead of markdown")
+    .option("--include-contents", "Embed top file contents in analyze output even for compact small-repo mode")
     .option("-n, --top <number>", "Number of top files to include in static mode", "30")
     .option("-m, --model <model>", "Override model for both fast and strong passes (e.g. qwen3:14b)")
     .option("-s, --static", "Static analysis only — no LLM calls, no API key needed. Outputs scored files + contents.");
@@ -161,6 +165,7 @@ async function run(repo: string, opts: {
   static?: boolean;
   top?: string;
   command?: "analyze" | "context" | "wiki";
+  includeContents?: boolean;
 }) {
   // Determine if repo is local or remote
   const isLocal = fs.existsSync(repo);
@@ -200,16 +205,19 @@ async function run(repo: string, opts: {
 
     // Read file contents for top files
     const topFiles = files.slice(0, topN);
+    const contentPolicy = resolveAnalysisContentPolicy(files, opts.includeContents);
     const fileContents = new Map<string, string>();
-    for (const file of topFiles) {
-      const content = getFileContent(repoDir, file.path, 200);
-      if (content) fileContents.set(file.path, content);
+    if (contentPolicy.includeContents) {
+      for (const file of topFiles) {
+        const content = getFileContent(repoDir, file.path, 200);
+        if (content) fileContents.set(file.path, content);
+      }
     }
 
     // === Static-only mode: no LLM, no API key ===
     if (opts.static) {
       const output = opts.json
-        ? JSON.stringify({ repoName, files, edges, fileContents: Object.fromEntries(fileContents) }, null, 2)
+        ? JSON.stringify({ repoName, files, edges, fileContents: Object.fromEntries(fileContents), contentPolicy }, null, 2)
         : staticToMarkdown(repoName, files, edges, fileContents);
 
       writeOutput(output, opts.output);

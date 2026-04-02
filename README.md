@@ -84,6 +84,9 @@ cartograph <repo> -c "trace auth flow"
 # Static analysis with ranked files and dependency data
 cartograph analyze ./my-project --static --json
 
+# Force embedded snippets when you really want them
+cartograph analyze ./my-project --static --json --include-contents
+
 # Task-scoped context selection
 cartograph context ./my-project --task "add user authentication" --json
 
@@ -99,6 +102,8 @@ cartograph export run-abc123 --to ./artifacts/wiki.md
 # Run the MCP server directly
 cartograph mcp
 ```
+
+For small repos, `analyze --static --json` now defaults to compact output instead of embedding top-file contents. That keeps tiny repos readable and lets direct file reads stay cheaper than a giant JSON blob. Use `--include-contents` when you explicitly want embedded snippets.
 
 ### Providers
 
@@ -149,7 +154,7 @@ Cartograph's MCP server exposes static repo analysis directly to hosts that pref
 
 Tools:
 
-- `analyze_repo`: score files, map dependencies, and return top file contents for a local repo or GitHub URL
+- `analyze_repo`: score files, map dependencies, and return compact analysis output or embedded top-file contents for a local repo or GitHub URL
 - `get_file_contents`: fetch full contents for specific files after analysis
 - `build_task_packet`: return a typed task packet with key files, dependency hubs, validation targets, risks, and task-specific details
 
