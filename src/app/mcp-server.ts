@@ -18,7 +18,7 @@ interface ResolvedRepoInput {
 export function createCartographMcpServer(): McpServer {
   const server = new McpServer({
     name: "cartograph",
-    version: "1.1.2",
+    version: "1.1.4",
   });
 
   server.tool(
