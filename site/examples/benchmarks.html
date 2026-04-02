@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartograph Benchmark Scorecards</title>
+  <meta name="description" content="Curated benchmark scorecards showing where Cartograph task packets are already strong and where they still need tuning.">
+  <meta name="theme-color" content="#b86b30">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <nav class="site-nav" aria-label="Main navigation">
+    <div class="container-wide nav-inner">
+      <a href="https://making-minds.ai" class="nav-parent">making-minds.ai <span class="nav-parent-sep">›</span></a>
+      <a class="brand" href="../index.html" aria-label="Cartograph home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 52 52" fill="none">
+            <circle cx="26" cy="26" r="22" stroke="currentColor" stroke-opacity="0.28" stroke-width="1.5"/>
+            <circle cx="26" cy="26" r="15" stroke="currentColor" stroke-opacity="0.18" stroke-width="1"/>
+            <path d="M26 9 L31 21 L43 26 L31 31 L26 43 L21 31 L9 26 L21 21 Z" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M26 13 L29 23 L39 26 L29 29 L26 39 L23 29 L13 26 L23 23 Z" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-text">Cartograph</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="../index.html#quickstart">Quickstart</a>
+        <a href="./index.html">Examples</a>
+      </div>
+
+      <div class="nav-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle theme">theme</button>
+        <a class="btn btn-ghost" href="https://github.com/anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a class="btn btn-primary" href="../index.html">Back to site</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main-content">
+    <section class="hero">
+      <div class="container hero-copy">
+        <div class="eyebrow">Benchmark proof</div>
+        <h1>How task packets hold up on public repos.</h1>
+        <p class="hero-lead">
+          These scorecards turn the benchmark suite into a product readout. The question is not just whether Cartograph emits a packet.
+          The question is whether the packet changes what a developer or coding agent reads next.
+        </p>
+      </div>
+    </section>
+
+    <section class="section section-surface">
+      <div class="container">
+        <div class="section-label">At a glance</div>
+        <h2>Where Cartograph is already strong.</h2>
+        <div class="comparison-grid">
+          <article class="card card-accent">
+            <div class="card-kicker">Strong today</div>
+            <ul class="bullet-list" role="list">
+              <li>Concrete bug-fix packets with explicit change surfaces</li>
+              <li>Mixed-language repos when the task names the real adapter or converter path</li>
+              <li>Small-repo ergonomics now that `analyze --static --json` stays compact by default</li>
+            </ul>
+          </article>
+          <article class="card card-muted">
+            <div class="card-kicker">Still being refined</div>
+            <ul class="bullet-list" role="list">
+              <li>Trace-flow validation targeting in large monorepos</li>
+              <li>Broad task packets that span frontend and backend simultaneously</li>
+              <li>Framework-heavy repos where many tests match the same generic terms</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-label">Scorecards</div>
+        <h2>Four benchmark cases that show the current shape of the product.</h2>
+        <div class="example-grid">
+          <article class="card card-accent">
+            <div class="card-kicker">Strong</div>
+            <h3>`llama.cpp` bug-fix</h3>
+            <p>The packet stays on the Dots OCR adapter and GGUF conversion surface, then lands on the exact Dots OCR GGUF test as the first validation target.</p>
+            <ul class="bullet-list" role="list">
+              <li><a href="./llama-cpp-task-packet.md">Open markdown packet</a></li>
+              <li><a href="./benchmark-llama-cpp-bug-fix.json">Open benchmark JSON</a></li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <div class="card-kicker">Good with caveats</div>
+            <h3>`fastapi` bug-fix</h3>
+            <p>Source-side focus is good. The packet prioritizes dependency and exception surfaces correctly, but test targeting still drifts to less relevant validations.</p>
+            <ul class="bullet-list" role="list">
+              <li><a href="./benchmark-fastapi-bug-fix.json">Open benchmark JSON</a></li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <div class="card-kicker">Good with caveats</div>
+            <h3>`next.js` trace-flow</h3>
+            <p>The packet stays on router and route code instead of collapsing into fixtures, but the first validation targets are still more e2e-heavy than ideal.</p>
+            <ul class="bullet-list" role="list">
+              <li><a href="./benchmark-nextjs-trace-flow.json">Open benchmark JSON</a></li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <div class="card-kicker">Useful, not clean enough yet</div>
+            <h3>`open-webui` task</h3>
+            <p>Backend state and redis surfaces rank highly, but broad task packets still admit generic structural files like `README.md` too easily.</p>
+            <ul class="bullet-list" role="list">
+              <li><a href="./benchmark-open-webui-task.json">Open benchmark JSON</a></li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-surface">
+      <div class="container">
+        <div class="section-label">What it means</div>
+        <h2>Why this matters as a product signal.</h2>
+        <div class="host-grid" role="list">
+          <article class="card" role="listitem">
+            <div class="card-kicker">Small repos</div>
+            <h3>Cartograph should get out of the way.</h3>
+            <p>Compact `analyze` output is the right default. Direct reads are often faster, and the product should acknowledge that.</p>
+          </article>
+          <article class="card" role="listitem">
+            <div class="card-kicker">Medium repos</div>
+            <h3>`packet` and `context` start paying off.</h3>
+            <p>This is where the product shifts from “interesting” to “time saver.”</p>
+          </article>
+          <article class="card" role="listitem">
+            <div class="card-kicker">Large repos</div>
+            <h3>`analyze` becomes triage and handoff infrastructure.</h3>
+            <p>The product value is not raw summary. It is cutting the next read list down to the useful shape.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container-wide footer-inner">
+      <div>
+        <div class="footer-brand">Cartograph</div>
+        <p class="footer-copy">Benchmark scorecards and example artifacts, published with the site.</p>
+      </div>
+      <div class="footer-links">
+        <a href="../index.html">Home</a>
+        <a href="./index.html">Examples</a>
+        <a href="../privacy.html">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../app.js"></script>
+</body>
+</html>

@@ -1,12 +1,20 @@
 # Cartograph
 
-Cartograph is a single-package repo analysis tool for coding agents. It ships a CLI, an MCP server, user-scope install adapters for Claude Code and OpenClaw, and packaged agent assets for documentation-heavy workflows.
+Cartograph is task-shaped repo context for coding agents. It ships a CLI, an MCP server, user-scope install adapters for Claude Code and OpenClaw, and packaged agent assets for documentation-heavy workflows.
 
 - npm: [`@anthony-maio/cartograph`](https://www.npmjs.com/package/@anthony-maio/cartograph)
 - MCP Registry: [`io.github.anthony-maio/cartograph`](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.anthony-maio/cartograph)
 - Quickstart: [`cartograph.making-minds.ai`](https://cartograph.making-minds.ai)
 
 Instead of dumping an entire repository into context, Cartograph ranks the files that matter, maps dependencies, caches structured artifacts, and lets the next tool or agent pick up from those artifacts.
+
+The primary workflow is:
+
+1. `analyze` to map the repo
+2. `packet` to prepare the work
+3. `context` to load the minimum files
+
+`wiki`, host installs, and benchmarks are secondary surfaces built around that core path.
 
 ## Install
 
@@ -57,6 +65,20 @@ Install it with:
 /plugin install cartograph@making-minds-tools
 ```
 
+## Primary Workflow
+
+If you only remember one thing, remember this:
+
+```bash
+cartograph analyze <repo> --static
+cartograph packet <repo> --type <type> --task "<task>"
+cartograph context <repo> --task "<task>" --json
+```
+
+- `analyze` maps the repo and tells you what matters.
+- `packet` turns a concrete job into a reusable working artifact.
+- `context` gives the next agent the smallest useful file set.
+
 ## Command Surface
 
 ```bash
@@ -81,17 +103,17 @@ cartograph <repo> -c "trace auth flow"
 ## CLI Usage
 
 ```bash
-# Static analysis with ranked files and dependency data
-cartograph analyze ./my-project --static --json
+# Map the repo
+cartograph analyze ./my-project --static
+
+# Prepare a concrete job
+cartograph packet ./my-project --type bug-fix --task "fix auth refresh bug" --changed src/auth/service.ts tests/auth/service.test.ts
+
+# Load the minimum file set for that job
+cartograph context ./my-project --task "add user authentication" --json
 
 # Force embedded snippets when you really want them
 cartograph analyze ./my-project --static --json --include-contents
-
-# Task-scoped context selection
-cartograph context ./my-project --task "add user authentication" --json
-
-# Typed task packet
-cartograph packet ./my-project --type bug-fix --task "fix auth refresh bug" --changed src/auth/service.ts tests/auth/service.test.ts
 
 # Full wiki output
 cartograph wiki ./my-project -p gemini -k $CARTOGRAPH_API_KEY -o wiki.md
@@ -104,6 +126,8 @@ cartograph mcp
 ```
 
 For small repos, `analyze --static --json` now defaults to compact output instead of embedding top-file contents. That keeps tiny repos readable and lets direct file reads stay cheaper than a giant JSON blob. Use `--include-contents` when you explicitly want embedded snippets.
+
+The default markdown output from `analyze --static` is human-first: it highlights what matters, surfaces dependency hubs, and recommends the next commands instead of dumping raw file contents immediately.
 
 ### Providers
 
@@ -147,6 +171,13 @@ Check status at any time:
 cartograph doctor
 cartograph doctor --json
 ```
+
+## Choose Your Surface
+
+- CLI: best default path when you want deterministic local analysis and explicit artifacts.
+- Claude Code plugin: best when you want plugin install, bundled skills, slash commands, and a plugin-scoped MCP server.
+- OpenClaw skills: best when you want the same Cartograph workflow inside an OpenClaw skill-first environment.
+- MCP Registry: best when your host already prefers tool wiring over shell commands.
 
 ## MCP Server
 
@@ -236,6 +267,10 @@ npm run benchmark:task-packets -- --case llama-cpp-bug-fix --dry-run
 
 The benchmark runner writes packet artifacts to `benchmarks/task-packets/output/`, which is gitignored.
 
+Curated scorecards and public artifact links are also published on the site:
+
+- [`cartograph.making-minds.ai/examples/benchmarks.html`](https://cartograph.making-minds.ai/examples/benchmarks.html)
+
 ## Example Artifacts
 
 Tracked examples live under [`docs/examples`](./docs/examples):
@@ -243,6 +278,7 @@ Tracked examples live under [`docs/examples`](./docs/examples):
 - [`llama-cpp-task-packet.md`](./docs/examples/llama-cpp-task-packet.md)
 - [`llama-cpp-task-packet.json`](./docs/examples/llama-cpp-task-packet.json)
 - [`llama-cpp-deepwiki.md`](./docs/examples/llama-cpp-deepwiki.md)
+- [`task-packet-benchmark-scorecards.md`](./docs/examples/task-packet-benchmark-scorecards.md)
 
 These are useful when you want to show what a focused bug-fix packet and a curated repo brief look like on a large public codebase.
 

@@ -1,0 +1,169 @@
+{
+  "taskType": "bug-fix",
+  "taskSummary": "Fix a regression where dependency injection errors surface as internal server errors instead of the expected validation response.",
+  "repoId": "https://github.com/fastapi/fastapi",
+  "repoName": "fastapi/fastapi",
+  "generatedAt": "2026-03-29T00:56:51.871Z",
+  "keyFiles": [
+    {
+      "path": "fastapi/dependencies/models.py",
+      "reason": "Matches task terms: dependency",
+      "importanceScore": 39,
+      "relevanceScore": 58
+    },
+    {
+      "path": "fastapi/exceptions.py",
+      "reason": "Matches task terms: dependency, errors",
+      "importanceScore": 20,
+      "relevanceScore": 57
+    },
+    {
+      "path": "fastapi/_compat/v2.py",
+      "reason": "Matches task terms: errors",
+      "importanceScore": 20,
+      "relevanceScore": 49
+    },
+    {
+      "path": "fastapi/dependencies/utils.py",
+      "reason": "Matches task terms: dependency",
+      "importanceScore": 20,
+      "relevanceScore": 40
+    },
+    {
+      "path": "fastapi/openapi/utils.py",
+      "reason": "Matches task terms: dependency",
+      "importanceScore": 20,
+      "relevanceScore": 30
+    },
+    {
+      "path": "fastapi/openapi/models.py",
+      "reason": "Structurally important file (score 50)",
+      "importanceScore": 50,
+      "relevanceScore": 50
+    }
+  ],
+  "dependencyHubs": [
+    {
+      "path": "fastapi/dependencies/utils.py",
+      "inboundCount": 0,
+      "outboundCount": 2,
+      "role": "orchestrator"
+    },
+    {
+      "path": "fastapi/dependencies/models.py",
+      "inboundCount": 0,
+      "outboundCount": 1,
+      "role": "orchestrator"
+    },
+    {
+      "path": "fastapi/openapi/utils.py",
+      "inboundCount": 0,
+      "outboundCount": 1,
+      "role": "orchestrator"
+    },
+    {
+      "path": "fastapi/exceptions.py",
+      "inboundCount": 0,
+      "outboundCount": 1,
+      "role": "orchestrator"
+    },
+    {
+      "path": "fastapi/_compat/v2.py",
+      "inboundCount": 0,
+      "outboundCount": 2,
+      "role": "orchestrator"
+    }
+  ],
+  "entryPoints": [
+    "fastapi/dependencies/models.py",
+    "fastapi/exceptions.py",
+    "fastapi/_compat/v2.py"
+  ],
+  "minimalContext": [
+    {
+      "path": "tests/test_tutorial/test_dependencies/test_tutorial008c.py",
+      "reason": "Matches task terms: dependency, errors, internal",
+      "importanceScore": 15,
+      "relevanceScore": 78
+    },
+    {
+      "path": "tests/test_tutorial/test_dependencies/test_tutorial008d.py",
+      "reason": "Matches task terms: dependency, errors, internal",
+      "importanceScore": 15,
+      "relevanceScore": 78
+    },
+    {
+      "path": "tests/test_dependency_after_yield_raise.py",
+      "reason": "Matches task terms: dependency, errors",
+      "importanceScore": 20,
+      "relevanceScore": 65
+    },
+    {
+      "path": "tests/test_dependency_contextmanager.py",
+      "reason": "Matches task terms: dependency, errors",
+      "importanceScore": 20,
+      "relevanceScore": 65
+    }
+  ],
+  "constraints": [
+    "Prefer focused edits around the minimal context before widening scope.",
+    "Treat high-fan-in modules as high-blast-radius surfaces.",
+    "Confirm entry-point wiring before changing shared dependencies."
+  ],
+  "unknowns": [],
+  "risks": [
+    "The packet includes entry-point files, so wiring regressions may affect a broad surface area."
+  ],
+  "recommendedNextSteps": [
+    "Inspect `fastapi/dependencies/models.py` first.",
+    "Read `fastapi/exceptions.py` next to confirm the surrounding wiring.",
+    "Use `tests/test_duplicate_models_openapi.py` as the first validation target.",
+    "Reproduce the issue against the top candidate test or the nearest affected module before editing."
+  ],
+  "validationTargets": [
+    {
+      "path": "tests/test_duplicate_models_openapi.py",
+      "reason": "Near selected source surface"
+    },
+    {
+      "path": "tests/test_schema_compat_pydantic_v2.py",
+      "reason": "Near selected source surface"
+    },
+    {
+      "path": "tests/test_tutorial/test_dependencies/test_tutorial012.py",
+      "reason": "Matches task terms: dependency"
+    },
+    {
+      "path": "tests/test_tutorial/test_testing_dependencies/test_tutorial001.py",
+      "reason": "Matches task terms: dependency"
+    },
+    {
+      "path": "tests/test_ws_dependencies.py",
+      "reason": "Matches task terms: dependency"
+    }
+  ],
+  "artifacts": [
+    "task-packet"
+  ],
+  "confidence": 0.91,
+  "details": {
+    "reproductionClues": [
+      "Task terms detected: regression, where, dependency, injection, errors, surface, internal, instead.",
+      "Start around `fastapi/dependencies/models.py` because it ranked highest for this task.",
+      "Use `tests/test_duplicate_models_openapi.py` to confirm or reproduce behavior quickly.",
+      "Watch `fastapi/dependencies/utils.py` for shared dependency effects while reproducing."
+    ],
+    "suspectedFaultSites": [
+      "fastapi/dependencies/models.py",
+      "fastapi/exceptions.py",
+      "fastapi/_compat/v2.py"
+    ],
+    "candidateTests": [
+      "tests/test_duplicate_models_openapi.py",
+      "tests/test_schema_compat_pydantic_v2.py",
+      "tests/test_tutorial/test_dependencies/test_tutorial012.py",
+      "tests/test_tutorial/test_testing_dependencies/test_tutorial001.py",
+      "tests/test_ws_dependencies.py"
+    ]
+  }
+}

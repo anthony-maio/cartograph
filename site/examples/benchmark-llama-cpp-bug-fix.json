@@ -1,0 +1,132 @@
+{
+  "taskType": "bug-fix",
+  "taskSummary": "Fix the Dots OCR adapter bug in tools/mtmd/models/dots_ocr.cpp and the GGUF conversion path in convert_hf_to_gguf.py.",
+  "repoId": "https://github.com/ggml-org/llama.cpp",
+  "repoName": "ggml-org/llama.cpp",
+  "generatedAt": "2026-03-29T00:55:22.171Z",
+  "keyFiles": [
+    {
+      "path": "tools/mtmd/models/dots_ocr.cpp",
+      "reason": "Matches task terms: dots, ocr, mtmd",
+      "importanceScore": 0,
+      "relevanceScore": 110
+    },
+    {
+      "path": "convert_hf_to_gguf.py",
+      "reason": "Matches task terms: gguf, convert",
+      "importanceScore": 0,
+      "relevanceScore": 92
+    },
+    {
+      "path": "gguf-py/gguf/gguf.py",
+      "reason": "Matches task terms: gguf",
+      "importanceScore": 50,
+      "relevanceScore": 104
+    },
+    {
+      "path": "convert_llama_ggml_to_gguf.py",
+      "reason": "Matches task terms: gguf, convert",
+      "importanceScore": 30,
+      "relevanceScore": 84
+    },
+    {
+      "path": "convert_lora_to_gguf.py",
+      "reason": "Matches task terms: gguf, convert",
+      "importanceScore": 25,
+      "relevanceScore": 79
+    },
+    {
+      "path": "tools/mtmd/models/models.h",
+      "reason": "Matches task terms: mtmd",
+      "importanceScore": 50,
+      "relevanceScore": 78
+    }
+  ],
+  "dependencyHubs": [
+    {
+      "path": "gguf-py/gguf/gguf.py",
+      "inboundCount": 18,
+      "outboundCount": 1,
+      "role": "shared dependency"
+    },
+    {
+      "path": "tools/mtmd/models/models.h",
+      "inboundCount": 2,
+      "outboundCount": 0,
+      "role": "shared dependency"
+    }
+  ],
+  "entryPoints": [
+    "tools/mtmd/models/dots_ocr.cpp",
+    "convert_hf_to_gguf.py",
+    "gguf-py/gguf/gguf.py"
+  ],
+  "minimalContext": [
+    {
+      "path": "tools/mtmd/models/dots_ocr.cpp",
+      "reason": "Matches task terms: dots, ocr, mtmd",
+      "importanceScore": 0,
+      "relevanceScore": 110
+    },
+    {
+      "path": "convert_hf_to_gguf.py",
+      "reason": "Matches task terms: gguf, convert",
+      "importanceScore": 0,
+      "relevanceScore": 92
+    },
+    {
+      "path": "gguf-py/tests/test_convert_hf_to_gguf_dots_ocr.py",
+      "reason": "Matches task terms: dots, ocr, gguf, convert",
+      "importanceScore": 0,
+      "relevanceScore": 136
+    },
+    {
+      "path": "gguf-py/gguf/gguf.py",
+      "reason": "Matches task terms: gguf",
+      "importanceScore": 50,
+      "relevanceScore": 104
+    }
+  ],
+  "constraints": [
+    "Prefer focused edits around the minimal context before widening scope.",
+    "Treat high-fan-in modules as high-blast-radius surfaces.",
+    "Confirm entry-point wiring before changing shared dependencies."
+  ],
+  "unknowns": [],
+  "risks": [
+    "Changes near `gguf-py/gguf/gguf.py` may fan out widely because it is a high fan-in dependency.",
+    "The packet includes entry-point files, so wiring regressions may affect a broad surface area."
+  ],
+  "recommendedNextSteps": [
+    "Inspect `tools/mtmd/models/dots_ocr.cpp` first.",
+    "Read `convert_hf_to_gguf.py` next to confirm the surrounding wiring.",
+    "Use `gguf-py/tests/test_convert_hf_to_gguf_dots_ocr.py` as the first validation target.",
+    "Reproduce the issue against the top candidate test or the nearest affected module before editing."
+  ],
+  "validationTargets": [
+    {
+      "path": "gguf-py/tests/test_convert_hf_to_gguf_dots_ocr.py",
+      "reason": "Matches task terms: dots, ocr, gguf, convert"
+    }
+  ],
+  "artifacts": [
+    "task-packet"
+  ],
+  "confidence": 0.95,
+  "details": {
+    "reproductionClues": [
+      "Task terms detected: dots, ocr, mtmd, gguf, conversion, convert.",
+      "Start around `tools/mtmd/models/dots_ocr.cpp` because it ranked highest for this task.",
+      "Use `gguf-py/tests/test_convert_hf_to_gguf_dots_ocr.py` to confirm or reproduce behavior quickly.",
+      "Watch `gguf-py/gguf/gguf.py` for shared dependency effects while reproducing."
+    ],
+    "suspectedFaultSites": [
+      "tools/mtmd/models/dots_ocr.cpp",
+      "convert_hf_to_gguf.py",
+      "gguf-py/gguf/gguf.py"
+    ],
+    "candidateTests": [
+      "gguf-py/tests/test_convert_hf_to_gguf_dots_ocr.py"
+    ]
+  }
+}

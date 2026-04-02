@@ -1,0 +1,174 @@
+{
+  "taskType": "trace-flow",
+  "taskSummary": "Trace request handling from an App Router entry point to route execution for a server-rendered page.",
+  "repoId": "https://github.com/vercel/next.js",
+  "repoName": "vercel/next.js",
+  "generatedAt": "2026-03-29T00:56:34.425Z",
+  "keyFiles": [
+    {
+      "path": "packages/next/src/shared/lib/router/routes/app.ts",
+      "reason": "Matches task terms: router, route",
+      "importanceScore": 100,
+      "relevanceScore": 172
+    },
+    {
+      "path": "packages/next/src/shared/lib/router/router.ts",
+      "reason": "Matches task terms: router, route",
+      "importanceScore": 100,
+      "relevanceScore": 157
+    },
+    {
+      "path": "packages/next/src/export/types.ts",
+      "reason": "Matches task terms: router, entry, route, page",
+      "importanceScore": 70,
+      "relevanceScore": 154
+    },
+    {
+      "path": "packages/next/src/shared/lib/constants.ts",
+      "reason": "Matches task terms: entry, point, route, page",
+      "importanceScore": 70,
+      "relevanceScore": 154
+    },
+    {
+      "path": "packages/next/src/shared/lib/router/utils/index.ts",
+      "reason": "Matches task terms: router, route",
+      "importanceScore": 79,
+      "relevanceScore": 151
+    },
+    {
+      "path": "packages/next/src/client/router.ts",
+      "reason": "Matches task terms: router, route",
+      "importanceScore": 100,
+      "relevanceScore": 148
+    }
+  ],
+  "dependencyHubs": [
+    {
+      "path": "packages/next/src/shared/lib/isomorphic/path.js",
+      "inboundCount": 1079,
+      "outboundCount": 1,
+      "role": "shared dependency"
+    },
+    {
+      "path": "packages/next/src/server/next.ts",
+      "inboundCount": 561,
+      "outboundCount": 20,
+      "role": "shared dependency"
+    },
+    {
+      "path": "packages/next/cache.js",
+      "inboundCount": 212,
+      "outboundCount": 6,
+      "role": "shared dependency"
+    },
+    {
+      "path": "packages/next/src/shared/lib/router/routes/app.ts",
+      "inboundCount": 127,
+      "outboundCount": 3,
+      "role": "shared dependency"
+    },
+    {
+      "path": "packages/next/src/shared/lib/router/router.ts",
+      "inboundCount": 11,
+      "outboundCount": 41,
+      "role": "orchestrator"
+    }
+  ],
+  "entryPoints": [
+    "packages/next/src/shared/lib/router/routes/app.ts",
+    "packages/next/src/shared/lib/router/utils/index.ts",
+    "packages/next/src/server/lib/incremental-cache/index.ts"
+  ],
+  "minimalContext": [
+    {
+      "path": "packages/next/src/shared/lib/router/routes/app.ts",
+      "reason": "Matches task terms: router, route",
+      "importanceScore": 100,
+      "relevanceScore": 172
+    },
+    {
+      "path": "packages/next/src/shared/lib/router/router.ts",
+      "reason": "Matches task terms: router, route",
+      "importanceScore": 100,
+      "relevanceScore": 157
+    },
+    {
+      "path": "packages/next/src/export/types.ts",
+      "reason": "Matches task terms: router, entry, route, page",
+      "importanceScore": 70,
+      "relevanceScore": 154
+    },
+    {
+      "path": "packages/next/src/shared/lib/constants.ts",
+      "reason": "Matches task terms: entry, point, route, page",
+      "importanceScore": 70,
+      "relevanceScore": 154
+    }
+  ],
+  "constraints": [
+    "Prefer focused edits around the minimal context before widening scope.",
+    "Treat high-fan-in modules as high-blast-radius surfaces.",
+    "Confirm entry-point wiring before changing shared dependencies."
+  ],
+  "unknowns": [
+    "Multiple plausible entry points exist, so the exact runtime path may need confirmation."
+  ],
+  "risks": [
+    "Changes near `packages/next/src/shared/lib/router/routes/app.ts` may fan out widely because it is a high fan-in dependency.",
+    "The packet includes entry-point files, so wiring regressions may affect a broad surface area."
+  ],
+  "recommendedNextSteps": [
+    "Inspect `packages/next/src/shared/lib/router/routes/app.ts` first.",
+    "Read `packages/next/src/shared/lib/router/router.ts` next to confirm the surrounding wiring.",
+    "Use `test/e2e/app-dir/app-prefetch/app/invalid-url/from-router-prefetch/page.js` as the first validation target.",
+    "Follow the highest-ranked entry point hop by hop before reading leaf modules."
+  ],
+  "validationTargets": [
+    {
+      "path": "test/e2e/app-dir/app-prefetch/app/invalid-url/from-router-prefetch/page.js",
+      "reason": "Matches task terms: router, route, page"
+    },
+    {
+      "path": "test/e2e/app-dir/parallel-routes-and-interception/app/intercepting-routes-dynamic-prerendered/photos/(.)[id]/page.js",
+      "reason": "Matches task terms: route, rendered, page"
+    },
+    {
+      "path": "test/e2e/app-dir/parallel-routes-and-interception/app/intercepting-routes-dynamic-prerendered/photos/[id]/page.js",
+      "reason": "Matches task terms: route, rendered, page"
+    },
+    {
+      "path": "test/e2e/app-dir/javascript-urls/app/app/router-prefetch/page.tsx",
+      "reason": "Matches task terms: router, route, page"
+    },
+    {
+      "path": "test/e2e/app-dir/javascript-urls/app/app/router-push/page.tsx",
+      "reason": "Matches task terms: router, route, page"
+    }
+  ],
+  "artifacts": [
+    "task-packet"
+  ],
+  "confidence": 0.91,
+  "details": {
+    "startPoints": [
+      "packages/next/src/shared/lib/router/routes/app.ts",
+      "packages/next/src/shared/lib/router/utils/index.ts",
+      "packages/next/src/server/lib/incremental-cache/index.ts"
+    ],
+    "pathCandidates": [
+      "packages/next/src/shared/lib/router/routes/app.ts -> evals/evals/agent-000-app-router-migration-simple/pages/_app.tsx",
+      "packages/next/src/shared/lib/router/routes/app.ts -> packages/next/src/server/dev/static-paths-worker.ts",
+      "packages/next/src/shared/lib/router/utils/index.ts -> packages/next/src/client/resolve-href.ts",
+      "packages/next/src/shared/lib/router/utils/index.ts -> packages/next/src/lib/create-client-router-filter.ts"
+    ],
+    "branchPoints": [
+      "packages/next/src/server/next.ts",
+      "packages/next/cache.js",
+      "packages/next/src/shared/lib/router/routes/app.ts",
+      "packages/next/src/shared/lib/router/router.ts"
+    ],
+    "sideEffects": [
+      "Request/response boundaries may shape the observed behavior."
+    ]
+  }
+}

@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cartograph - 5-minute quickstart for coding agents</title>
-  <meta name="description" content="Install Cartograph, analyze a repo, pull task-scoped context, and wire Claude Code or OpenClaw in under five minutes.">
-  <meta property="og:title" content="Cartograph - 5-minute quickstart for coding agents">
-  <meta property="og:description" content="CLI first. MCP optional. Claude Code and OpenClaw skills included.">
+  <title>Cartograph - task-shaped repo context for coding agents</title>
+  <meta name="description" content="Map a repo, build a task packet, load the minimum context, and wire Claude Code or OpenClaw without context sprawl.">
+  <meta property="og:title" content="Cartograph - task-shaped repo context for coding agents">
+  <meta property="og:description" content="Analyze, packet, context. CLI first. MCP optional. Claude Code and OpenClaw included.">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#b86b30">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,16 +52,15 @@
     <section class="hero">
       <div class="container-wide hero-grid">
         <div class="hero-copy">
-          <div class="eyebrow">Single package repo analysis for coding agents</div>
+          <div class="eyebrow">Task-shaped repo context for coding agents</div>
           <h1>Map the repo before you burn context.</h1>
           <p class="hero-lead">
-            Cartograph is a CLI-first repo analysis package with an optional MCP server, user-scope host installs,
-            and two packaged skills that keep agent context tight without losing structure.
+            Cartograph is a CLI-first package that turns a repo into the smallest useful working artifact for the next agent.
           </p>
           <p class="hero-sub">
-            Use it against local repos or GitHub repos. Rank the files that matter, trace dependency hubs,
-            pull only the context needed for a task, and hand structured artifacts to Claude Code, OpenClaw,
-            or any agent that can run a shell command.
+            Use it against local repos or GitHub repos. First map the repo, then build a typed task packet,
+            then load only the context needed for the job. Claude Code, OpenClaw, MCP, and direct shell workflows
+            all ride on the same core analysis engine.
           </p>
           <div class="hero-actions">
             <a class="btn btn-primary" href="#quickstart">See the 5-minute quickstart</a>
@@ -89,7 +88,8 @@
             <div class="panel-kicker">Zero to first result</div>
             <pre class="signal-block"><code>npm install -g @anthony-maio/cartograph
 
-cartograph analyze ./my-project --static --json
+cartograph analyze ./my-project --static
+cartograph packet ./my-project --type bug-fix --task "fix auth"
 cartograph context ./my-project --task "add auth" --json
 
 /plugin marketplace add anthony-maio/cartograph
@@ -142,10 +142,37 @@ cartograph install mcp</code></pre>
       </div>
     </section>
 
+    <section class="section">
+      <div class="container">
+        <div class="section-label">Primary workflow</div>
+        <h2>Analyze, packet, context.</h2>
+        <p class="section-intro">
+          Cartograph works best when you treat it like a workflow, not a bag of commands.
+        </p>
+        <div class="host-grid" role="list">
+          <article class="card" role="listitem">
+            <div class="card-kicker">01</div>
+            <h3>Analyze</h3>
+            <p>Map the repo, rank important files, and surface dependency hubs without dragging the whole tree into context.</p>
+          </article>
+          <article class="card" role="listitem">
+            <div class="card-kicker">02</div>
+            <h3>Packet</h3>
+            <p>Turn a concrete job like a bug fix or review into a reusable packet with likely edit points, risks, and validation targets.</p>
+          </article>
+          <article class="card" role="listitem">
+            <div class="card-kicker">03</div>
+            <h3>Context</h3>
+            <p>Load the smallest file set that supports the task you actually want to perform.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="section" id="quickstart">
       <div class="container">
         <div class="section-label">5-minute quickstart</div>
-        <h2>Install once, map a repo, then wire your host.</h2>
+        <h2>Install once, map the repo, then prepare the work.</h2>
         <p class="section-intro">
           This is the fastest useful path. You do not need MCP to start. Install the package, run the CLI,
           and only add host integrations where they help.
@@ -183,6 +210,19 @@ cartograph analyze ./my-project --static --json --include-contents</code></pre>
           <article class="step-card" role="listitem">
             <div class="step-number">03</div>
             <div>
+              <h3>Build a task packet</h3>
+              <p>Turn a concrete job into a reusable working artifact with key files, risks, and validation targets.</p>
+              <div class="code-card">
+                <div class="code-title">task packet</div>
+                <pre id="packet-command" class="code-block"><code>cartograph packet ./my-project --type bug-fix --task "fix auth refresh bug"</code></pre>
+                <button class="copy-button" type="button" data-copy-target="packet-command">Copy</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="step-card" role="listitem">
+            <div class="step-number">04</div>
+            <div>
               <h3>Pull task-scoped context</h3>
               <p>Ask for the smallest file set that supports the task you actually want to do.</p>
               <div class="code-card">
@@ -194,7 +234,7 @@ cartograph analyze ./my-project --static --json --include-contents</code></pre>
           </article>
 
           <article class="step-card" role="listitem">
-            <div class="step-number">04</div>
+            <div class="step-number">05</div>
             <div>
               <h3>Install only the host you want</h3>
               <p>Use the Claude plugin marketplace or the hybrid CLI install model, depending on how you work.</p>
@@ -207,20 +247,6 @@ cartograph install claude
 cartograph install openclaw
 cartograph install mcp</code></pre>
                 <button class="copy-button" type="button" data-copy-target="host-command">Copy</button>
-              </div>
-            </div>
-          </article>
-
-          <article class="step-card" role="listitem">
-            <div class="step-number">05</div>
-            <div>
-              <h3>Generate docs or export artifacts</h3>
-              <p>Keep working artifacts in user cache. Export only when a human needs a concrete path.</p>
-              <div class="code-card">
-                <div class="code-title">docs and export</div>
-                <pre id="docs-command" class="code-block"><code>cartograph wiki ./my-project --static
-cartograph export run-abc123 --to ./artifacts/wiki.md</code></pre>
-                <button class="copy-button" type="button" data-copy-target="docs-command">Copy</button>
               </div>
             </div>
           </article>
@@ -360,9 +386,10 @@ npm run benchmark:task-packets -- --output benchmarks/task-packets/output</code>
 
           <article class="example-card">
             <div class="example-title">Showcase artifacts</div>
-            <p>See a real bug-fix packet and curated repo brief for `llama.cpp` directly on this site:</p>
+            <p>See a real bug-fix packet, curated repo brief, and benchmark scorecards directly on this site:</p>
             <ul class="bullet-list" role="list">
               <li><a href="examples/index.html">examples landing page</a></li>
+              <li><a href="examples/benchmarks.html">benchmark scorecards</a></li>
               <li><a href="examples/llama-cpp-task-packet.md">llama.cpp task packet</a></li>
               <li><a href="examples/llama-cpp-task-packet.json">llama.cpp task packet JSON</a></li>
               <li><a href="examples/llama-cpp-deepwiki.md">llama.cpp DeepWiki-style brief</a></li>

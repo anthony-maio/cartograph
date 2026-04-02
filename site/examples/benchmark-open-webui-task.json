@@ -1,0 +1,157 @@
+{
+  "taskType": "task",
+  "taskSummary": "Build a task packet for fixing model selection persistence across backend state and frontend UI surfaces.",
+  "repoId": "https://github.com/open-webui/open-webui",
+  "repoName": "open-webui/open-webui",
+  "generatedAt": "2026-03-29T00:56:59.830Z",
+  "keyFiles": [
+    {
+      "path": "backend/open_webui/socket/main.py",
+      "reason": "Matches task terms: backend, state",
+      "importanceScore": 50,
+      "relevanceScore": 93
+    },
+    {
+      "path": "backend/open_webui/utils/redis.py",
+      "reason": "Matches task terms: backend",
+      "importanceScore": 68,
+      "relevanceScore": 92
+    },
+    {
+      "path": "src/lib/constants.ts",
+      "reason": "High fan-in dependency hub",
+      "importanceScore": 70,
+      "relevanceScore": 82
+    },
+    {
+      "path": "src/lib/apis/index.ts",
+      "reason": "Matches task terms: backend",
+      "importanceScore": 50,
+      "relevanceScore": 77
+    },
+    {
+      "path": "backend/open_webui/main.py",
+      "reason": "Matches task terms: backend",
+      "importanceScore": 50,
+      "relevanceScore": 75
+    },
+    {
+      "path": "README.md",
+      "reason": "Structurally important file (score 70)",
+      "importanceScore": 70,
+      "relevanceScore": 70
+    }
+  ],
+  "dependencyHubs": [
+    {
+      "path": "backend/open_webui/utils/redis.py",
+      "inboundCount": 5,
+      "outboundCount": 1,
+      "role": "shared dependency"
+    },
+    {
+      "path": "backend/open_webui/socket/main.py",
+      "inboundCount": 0,
+      "outboundCount": 1,
+      "role": "orchestrator"
+    },
+    {
+      "path": "backend/open_webui/main.py",
+      "inboundCount": 0,
+      "outboundCount": 1,
+      "role": "orchestrator"
+    },
+    {
+      "path": "src/lib/constants.ts",
+      "inboundCount": 29,
+      "outboundCount": 1,
+      "role": "shared dependency"
+    },
+    {
+      "path": "backend/open_webui/retrieval/web/utils.py",
+      "inboundCount": 0,
+      "outboundCount": 1,
+      "role": "orchestrator"
+    }
+  ],
+  "entryPoints": [
+    "backend/open_webui/socket/main.py",
+    "src/lib/apis/index.ts",
+    "backend/open_webui/main.py"
+  ],
+  "minimalContext": [
+    {
+      "path": "backend/open_webui/socket/main.py",
+      "reason": "Matches task terms: backend, state",
+      "importanceScore": 50,
+      "relevanceScore": 93
+    },
+    {
+      "path": "backend/open_webui/utils/redis.py",
+      "reason": "Matches task terms: backend",
+      "importanceScore": 68,
+      "relevanceScore": 92
+    },
+    {
+      "path": "src/lib/constants.ts",
+      "reason": "High fan-in dependency hub",
+      "importanceScore": 70,
+      "relevanceScore": 82
+    },
+    {
+      "path": "src/lib/apis/index.ts",
+      "reason": "Matches task terms: backend",
+      "importanceScore": 50,
+      "relevanceScore": 77
+    }
+  ],
+  "constraints": [
+    "Prefer focused edits around the minimal context before widening scope.",
+    "Treat high-fan-in modules as high-blast-radius surfaces.",
+    "Confirm entry-point wiring before changing shared dependencies."
+  ],
+  "unknowns": [],
+  "risks": [
+    "Changes near `backend/open_webui/utils/redis.py` may fan out widely because it is a high fan-in dependency.",
+    "The packet includes entry-point files, so wiring regressions may affect a broad surface area."
+  ],
+  "recommendedNextSteps": [
+    "Inspect `backend/open_webui/socket/main.py` first.",
+    "Read `backend/open_webui/utils/redis.py` next to confirm the surrounding wiring.",
+    "Use `backend/open_webui/test/util/test_redis.py` as the first validation target."
+  ],
+  "validationTargets": [
+    {
+      "path": "backend/open_webui/test/util/test_redis.py",
+      "reason": "Matches task terms: backend"
+    },
+    {
+      "path": "backend/open_webui/test/apps/webui/storage/test_provider.py",
+      "reason": "Matches task terms: backend"
+    },
+    {
+      "path": "backend/open_webui/test/apps/webui/routers/test_users.py",
+      "reason": "Matches task terms: backend"
+    },
+    {
+      "path": "backend/open_webui/test/apps/webui/routers/test_auths.py",
+      "reason": "Matches task terms: backend"
+    },
+    {
+      "path": "backend/open_webui/test/apps/webui/routers/test_models.py",
+      "reason": "Matches task terms: backend"
+    }
+  ],
+  "artifacts": [
+    "task-packet"
+  ],
+  "confidence": 0.91,
+  "details": {
+    "focusAreas": [
+      "backend/open_webui/socket/main.py",
+      "backend/open_webui/utils/redis.py",
+      "src/lib/constants.ts",
+      "src/lib/apis/index.ts"
+    ]
+  }
+}
