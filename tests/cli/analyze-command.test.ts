@@ -133,3 +133,57 @@ test("analyze subcommand embeds contents for small repos when explicitly request
     fs.rmSync(repoDir, { recursive: true, force: true });
   }
 });
+
+test("analyze subcommand renders a human-first summary in markdown mode", async () => {
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "cartograph-summary-repo-"));
+
+  try {
+    fs.writeFileSync(path.join(repoDir, "README.md"), "# Summary repo\n");
+    fs.mkdirSync(path.join(repoDir, "src"));
+    fs.writeFileSync(
+      path.join(repoDir, "src", "index.ts"),
+      [
+        "import { runHelper } from './helper';",
+        "export function run() {",
+        "  return runHelper();",
+        "}",
+      ].join("\n"),
+    );
+    fs.writeFileSync(
+      path.join(repoDir, "src", "helper.ts"),
+      [
+        "export function runHelper() {",
+        "  return 'ok';",
+        "}",
+      ].join("\n"),
+    );
+
+    const result = await runCli(["analyze", repoDir, "--static"]);
+
+    assert.equal(result.code, 0, result.stderr);
+    assert.match(result.stdout, /## What Matters/);
+    assert.match(result.stdout, /## Recommended Next Commands/);
+    assert.match(result.stdout, /cartograph packet <repo> --type bug-fix --task "\.\.\."/);
+    assert.doesNotMatch(result.stdout, /## Embedded Snippets/);
+  } finally {
+    fs.rmSync(repoDir, { recursive: true, force: true });
+  }
+});
+
+test("analyze subcommand includes embedded snippets in markdown mode when requested", async () => {
+  const repoDir = fs.mkdtempSync(path.join(os.tmpdir(), "cartograph-summary-full-repo-"));
+
+  try {
+    fs.writeFileSync(path.join(repoDir, "README.md"), "# Summary repo\n");
+    fs.mkdirSync(path.join(repoDir, "src"));
+    fs.writeFileSync(path.join(repoDir, "src", "index.ts"), "export const value = 1;\n");
+
+    const result = await runCli(["analyze", repoDir, "--static", "--include-contents"]);
+
+    assert.equal(result.code, 0, result.stderr);
+    assert.match(result.stdout, /## Embedded Snippets/);
+    assert.match(result.stdout, /### src\/index\.ts/);
+  } finally {
+    fs.rmSync(repoDir, { recursive: true, force: true });
+  }
+});

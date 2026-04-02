@@ -3,7 +3,7 @@ import type { FileNode } from "../schema";
 export const SMALL_REPO_COMPACT_THRESHOLD = 20;
 
 export interface AnalysisContentPolicy {
-  mode: "full" | "compact";
+  mode: "full" | "compact" | "summary";
   includeContents: boolean;
   omittedFileContents: boolean;
   reason: string;
@@ -14,6 +14,7 @@ export interface AnalysisContentPolicy {
 export function resolveAnalysisContentPolicy(
   files: FileNode[],
   includeContentsRequested = false,
+  surface: "json" | "markdown" = "json",
 ): AnalysisContentPolicy {
   if (includeContentsRequested) {
     return {
@@ -21,6 +22,17 @@ export function resolveAnalysisContentPolicy(
       includeContents: true,
       omittedFileContents: false,
       reason: "Embedded file contents were explicitly requested.",
+      repoFileCount: files.length,
+      threshold: SMALL_REPO_COMPACT_THRESHOLD,
+    };
+  }
+
+  if (surface === "markdown") {
+    return {
+      mode: "summary",
+      includeContents: false,
+      omittedFileContents: true,
+      reason: "Markdown analyze output is summary-first by default. Use --include-contents when you want embedded snippets.",
       repoFileCount: files.length,
       threshold: SMALL_REPO_COMPACT_THRESHOLD,
     };

@@ -1,5 +1,6 @@
 import type { WikiResult, FileSummary, FileNode, DependencyEdge } from "./schema";
 import type { TaskPacket } from "./app/task-packets";
+import type { AnalysisContentPolicy } from "./app/analysis-output";
 
 export function wikiToMarkdown(wiki: WikiResult): string {
   const lines: string[] = [];
@@ -60,21 +61,64 @@ export function staticToMarkdown(
   files: FileNode[],
   edges: DependencyEdge[],
   fileContents: Map<string, string>,
+  contentPolicy?: AnalysisContentPolicy,
 ): string {
   const lines: string[] = [];
   const totalTokens = Array.from(fileContents.values()).reduce((acc, c) => acc + Math.ceil(c.length / 4), 0);
+  const inboundCounts = new Map<string, number>();
+  const outboundCounts = new Map<string, number>();
+  for (const edge of edges) {
+    outboundCounts.set(edge.from, (outboundCounts.get(edge.from) ?? 0) + 1);
+    inboundCounts.set(edge.to, (inboundCounts.get(edge.to) ?? 0) + 1);
+  }
+
+  const topFiles = files.slice(0, 6);
+  const dependencyHubs = [...files]
+    .map((file) => ({
+      path: file.path,
+      inboundCount: inboundCounts.get(file.path) ?? 0,
+      outboundCount: outboundCounts.get(file.path) ?? 0,
+    }))
+    .filter((file) => file.inboundCount > 0 || file.outboundCount > 0)
+    .sort((left, right) => {
+      const leftWeight = left.inboundCount * 3 + left.outboundCount;
+      const rightWeight = right.inboundCount * 3 + right.outboundCount;
+      return rightWeight - leftWeight;
+    })
+    .slice(0, 5);
 
   lines.push(`# ${repoName}`);
   lines.push("");
-  lines.push(`> ${files.length} files analyzed, ${edges.length} dependency edges, ~${totalTokens.toLocaleString()} tokens of context below`);
+  lines.push(`> ${files.length} files analyzed, ${edges.length} dependency edges${fileContents.size > 0 ? `, ~${totalTokens.toLocaleString()} embedded tokens` : ""}`);
   lines.push("");
+
+  if (contentPolicy) {
+    lines.push(`> Output mode: **${contentPolicy.mode}**. ${contentPolicy.reason}`);
+    lines.push("");
+  }
+
+  lines.push("## What Matters");
+  lines.push("");
+  for (const file of topFiles) {
+    lines.push(`- \`${file.path}\` — ${describeFileImportance(file, inboundCounts.get(file.path) ?? 0, outboundCounts.get(file.path) ?? 0)}`);
+  }
+  lines.push("");
+
+  if (dependencyHubs.length > 0) {
+    lines.push("## Dependency Hubs");
+    lines.push("");
+    for (const hub of dependencyHubs) {
+      lines.push(`- \`${hub.path}\` — ${describeHubRole(hub.inboundCount, hub.outboundCount)}`);
+    }
+    lines.push("");
+  }
 
   // Language breakdown
   const langCounts: Record<string, number> = {};
   for (const f of files) {
     langCounts[f.language] = (langCounts[f.language] || 0) + 1;
   }
-  lines.push("## Languages");
+  lines.push("## Language Breakdown");
   lines.push("");
   for (const [lang, count] of Object.entries(langCounts).sort((a, b) => b[1] - a[1])) {
     lines.push(`- ${lang}: ${count} files`);
@@ -91,7 +135,6 @@ export function staticToMarkdown(
   }
   lines.push("");
 
-  // Key dependency edges
   if (edges.length > 0) {
     lines.push("## Key Dependencies");
     lines.push("");
@@ -101,22 +144,34 @@ export function staticToMarkdown(
     lines.push("");
   }
 
-  // File contents
-  lines.push("## File Contents");
+  lines.push("## Recommended Next Commands");
   lines.push("");
-  for (const [filePath, content] of fileContents) {
-    const file = files.find(f => f.path === filePath);
-    const ext = filePath.split(".").pop() || "";
-    lines.push(`### ${filePath}`);
+  lines.push("- `cartograph packet <repo> --type bug-fix --task \"...\"` to build a reusable task packet with likely edit points and validation targets.");
+  lines.push("- `cartograph context <repo> --task \"...\" --json` to load the minimum file set for the change you actually want to make.");
+  if (!contentPolicy || !contentPolicy.includeContents) {
+    lines.push("- `cartograph analyze <repo> --static --json --include-contents` if you want embedded snippets instead of the compact map.");
+  } else {
+    lines.push("- Open the highest-ranked files directly if you need to expand beyond the embedded snippets below.");
+  }
+  lines.push("");
+
+  if (fileContents.size > 0) {
+    lines.push("## Embedded Snippets");
     lines.push("");
-    if (file) {
-      lines.push(`Score: ${file.importanceScore} | ${file.language} | ${file.lines} lines | Exports: ${file.exports.join(", ") || "none"}`);
+    for (const [filePath, content] of fileContents) {
+      const file = files.find(f => f.path === filePath);
+      const ext = filePath.split(".").pop() || "";
+      lines.push(`### ${filePath}`);
+      lines.push("");
+      if (file) {
+        lines.push(`Score: ${file.importanceScore} | ${file.language} | ${file.lines} lines | Exports: ${file.exports.join(", ") || "none"}`);
+        lines.push("");
+      }
+      lines.push("```" + ext);
+      lines.push(content);
+      lines.push("```");
       lines.push("");
     }
-    lines.push("```" + ext);
-    lines.push(content);
-    lines.push("```");
-    lines.push("");
   }
 
   return lines.join("\n");
@@ -229,4 +284,44 @@ export function taskPacketToMarkdown(packet: TaskPacket): string {
   lines.push("");
 
   return lines.join("\n");
+}
+
+function describeFileImportance(file: FileNode, inboundCount: number, outboundCount: number): string {
+  const signals: string[] = [];
+
+  if (inboundCount >= 5) {
+    signals.push(`high fan-in (${inboundCount} inbound)`);
+  } else if (outboundCount >= 5) {
+    signals.push(`broad orchestrator (${outboundCount} outbound)`);
+  }
+
+  if (file.exports.length >= 5) {
+    signals.push(`large export surface (${file.exports.length} exports)`);
+  } else if (file.exports.length > 0) {
+    signals.push(`${file.exports.length} exports`);
+  }
+
+  if (file.importanceScore >= 80) {
+    signals.push(`very high importance (${file.importanceScore})`);
+  } else if (file.importanceScore >= 50) {
+    signals.push(`high importance (${file.importanceScore})`);
+  }
+
+  if (signals.length === 0) {
+    signals.push(`${file.language}, ${file.lines} lines`);
+  }
+
+  return signals.join(", ");
+}
+
+function describeHubRole(inboundCount: number, outboundCount: number): string {
+  if (inboundCount >= outboundCount * 2 && inboundCount > 0) {
+    return `shared dependency (${inboundCount} inbound, ${outboundCount} outbound)`;
+  }
+
+  if (outboundCount > inboundCount) {
+    return `orchestrator (${inboundCount} inbound, ${outboundCount} outbound)`;
+  }
+
+  return `cross-cutting module (${inboundCount} inbound, ${outboundCount} outbound)`;
 }

@@ -205,7 +205,7 @@ async function run(repo: string, opts: {
 
     // Read file contents for top files
     const topFiles = files.slice(0, topN);
-    const contentPolicy = resolveAnalysisContentPolicy(files, opts.includeContents);
+    const contentPolicy = resolveAnalysisContentPolicy(files, opts.includeContents, opts.json ? "json" : "markdown");
     const fileContents = new Map<string, string>();
     if (contentPolicy.includeContents) {
       for (const file of topFiles) {
@@ -218,7 +218,7 @@ async function run(repo: string, opts: {
     if (opts.static) {
       const output = opts.json
         ? JSON.stringify({ repoName, files, edges, fileContents: Object.fromEntries(fileContents), contentPolicy }, null, 2)
-        : staticToMarkdown(repoName, files, edges, fileContents);
+        : staticToMarkdown(repoName, files, edges, fileContents, contentPolicy);
 
       writeOutput(output, opts.output);
       cacheRunOutput(repoId, commandName, "analysis", opts.json ? "json" : "md", output);
