@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartograph for Product Hunt</title>
+  <meta name="description" content="Turn any repo into task-shaped context for coding agents. Analyze, packet, context. CLI first. MCP optional.">
+  <meta property="og:title" content="Cartograph for Product Hunt">
+  <meta property="og:description" content="Turn any repo into task-shaped context for coding agents. Analyze, packet, context. CLI first. MCP optional.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#b86b30">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <nav class="site-nav" aria-label="Main navigation">
+    <div class="container-wide nav-inner">
+      <a href="https://making-minds.ai" class="nav-parent">making-minds.ai <span class="nav-parent-sep">›</span></a>
+      <a class="brand" href="../index.html" aria-label="Cartograph home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 52 52" fill="none">
+            <circle cx="26" cy="26" r="22" stroke="currentColor" stroke-opacity="0.28" stroke-width="1.5"/>
+            <circle cx="26" cy="26" r="15" stroke="currentColor" stroke-opacity="0.18" stroke-width="1"/>
+            <path d="M26 9 L31 21 L43 26 L31 31 L26 43 L21 31 L9 26 L21 21 Z" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="1.2"/>
+            <path d="M26 13 L29 23 L39 26 L29 29 L26 39 L23 29 L13 26 L23 23 Z" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-text">Cartograph</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="../index.html#quickstart">Quickstart</a>
+        <a href="../examples/index.html">Examples</a>
+        <a href="../examples/benchmarks.html">Benchmarks</a>
+        <a href="./index.html">Launch</a>
+      </div>
+
+      <div class="nav-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle theme">theme</button>
+        <a class="btn btn-ghost" href="https://github.com/anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a class="btn btn-primary" href="https://www.npmjs.com/package/@anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">Install with npm</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main-content">
+    <section class="hero">
+      <div class="container-wide hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow">Product Hunt launch surface</div>
+          <h1>Turn any repo into task-shaped context for coding agents.</h1>
+          <p class="hero-lead">
+            Cartograph maps the repo, builds a typed task packet, and loads only the context the next agent needs.
+          </p>
+          <p class="hero-sub">
+            The product is live now as an open-source package with a CLI, an optional MCP server, a Claude Code plugin path,
+            OpenClaw skills, benchmark proof, and real sample artifacts on this site.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://www.npmjs.com/package/@anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">Install with npm</a>
+            <a class="btn btn-ghost" href="../index.html#quickstart">See the 5-minute quickstart</a>
+            <a class="btn btn-ghost" href="../examples/benchmarks.html">Benchmark proof</a>
+          </div>
+          <div class="hero-stats" role="list" aria-label="Launch proof points">
+            <div class="stat" role="listitem">
+              <div class="stat-value">Free</div>
+              <div class="stat-label">open-source package</div>
+            </div>
+            <div class="stat" role="listitem">
+              <div class="stat-value">CLI</div>
+              <div class="stat-label">first, MCP optional</div>
+            </div>
+            <div class="stat" role="listitem">
+              <div class="stat-value">Live</div>
+              <div class="stat-label">npm, Claude, OpenClaw, MCP</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-panel" aria-label="Product Hunt-ready workflow">
+          <div class="hero-panel-inner">
+            <div class="panel-kicker">Analyze -> Packet -> Context</div>
+            <pre class="signal-block"><code>npm install -g @anthony-maio/cartograph
+
+cartograph analyze ./my-project --static
+cartograph packet ./my-project --type bug-fix --task "fix auth refresh bug"
+cartograph context ./my-project --task "trace the auth flow" --json
+
+/plugin marketplace add anthony-maio/cartograph
+/plugin install cartograph@making-minds-tools</code></pre>
+            <div class="hero-panel-footer">
+              <span>Outputs: ranked files, dependency hubs, typed packets, minimal task context</span>
+              <span class="panel-chip">launch-ready and live now</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-surface">
+      <div class="container">
+        <div class="section-label">Why this converts</div>
+        <h2>Cartograph is not “AI reads your repo.” It is workflow infrastructure.</h2>
+        <p class="section-intro">
+          The point is not to stuff more files into context. The point is to hand the next agent a smaller, better artifact.
+          That is why the product is organized around <code>analyze</code>, <code>packet</code>, and <code>context</code>.
+        </p>
+        <div class="comparison-grid">
+          <article class="card card-muted">
+            <div class="card-kicker">What most tools do</div>
+            <h3>Repo orientation becomes a context tax.</h3>
+            <ul class="bullet-list" role="list">
+              <li>Read broad file trees just to get started.</li>
+              <li>Miss dependency hubs and actual edit surfaces.</li>
+              <li>Repeat the same orientation work in every host.</li>
+            </ul>
+          </article>
+          <article class="card card-accent">
+            <div class="card-kicker">What Cartograph does</div>
+            <h3>Reduce the repo to the useful shape.</h3>
+            <ul class="bullet-list" role="list">
+              <li>Map the repo before the agent burns context.</li>
+              <li>Shape the work into a typed task packet.</li>
+              <li>Load only the minimum useful file set.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <div class="card-kicker">Why now</div>
+            <h3>It is already live across the real surfaces.</h3>
+            <ul class="bullet-list" role="list">
+              <li><a href="https://www.npmjs.com/package/@anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">npm package</a></li>
+              <li><a href="https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">official MCP Registry</a></li>
+              <li><a href="../index.html#hosts">Claude Code and OpenClaw installs</a></li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-label">Small vs large repos</div>
+        <h2>It should get out of the way on tiny repos and pay off on big ones.</h2>
+        <div class="comparison-grid">
+          <article class="card">
+            <div class="card-kicker">Small repos</div>
+            <h3>Stay compact by default.</h3>
+            <p>Small projects should not get a 64 KB JSON dump just because a tool ran. Cartograph now keeps small-repo analysis compact by default and only embeds file contents when you ask for them.</p>
+          </article>
+          <article class="card card-accent">
+            <div class="card-kicker">Medium repos</div>
+            <h3>Packets become a real time saver.</h3>
+            <p>This is where the workflow starts to matter: analyze the repo, shape the concrete job, then hand the next agent a packet instead of a wall of text.</p>
+          </article>
+          <article class="card">
+            <div class="card-kicker">Large repos</div>
+            <h3>Triage and handoff become the product.</h3>
+            <p>On repos like <code>llama.cpp</code>, <code>fastapi</code>, and <code>next.js</code>, the value is not just summary. It is choosing what to read first and what to ignore.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-surface">
+      <div class="container">
+        <div class="section-label">Gallery storyboard</div>
+        <h2>Six screenshot-ready slides for the Product Hunt listing.</h2>
+        <p class="section-intro">
+          These are designed to be lifted directly into the launch asset pack. Each frame has one job: make the product legible in seconds.
+        </p>
+        <div class="launch-deck">
+          <article class="launch-slide">
+            <div class="launch-slide-meta">Slide 01 · Problem</div>
+            <h3>Most coding agents waste context on repo orientation.</h3>
+            <p>They read too many files, miss the real wiring, and spend the first half of the session figuring out what matters.</p>
+            <div class="panel-chip">Show the pain clearly</div>
+          </article>
+          <article class="launch-slide">
+            <div class="launch-slide-meta">Slide 02 · Workflow</div>
+            <h3>Analyze -> Packet -> Context</h3>
+            <p>Cartograph maps the repo, builds a typed task packet, and loads the smallest useful working set for the next agent.</p>
+            <div class="panel-chip">This is the product</div>
+          </article>
+          <article class="launch-slide">
+            <div class="launch-slide-meta">Slide 03 · Analyze</div>
+            <h3>Start with a human-readable repo map.</h3>
+            <p>Summary-first static analysis surfaces what matters, dependency hubs, and the next command to run instead of forcing raw internals on the first screen.</p>
+            <div class="panel-chip">Use the summary-first output</div>
+          </article>
+          <article class="launch-slide">
+            <div class="launch-slide-meta">Slide 04 · Packet</div>
+            <h3>Build a reusable working artifact for the actual job.</h3>
+            <p>Bug-fix, PR review, trace-flow, and change-request packets stay focused on likely edit surfaces, risks, and validation targets.</p>
+            <div class="panel-chip">Use the llama.cpp packet</div>
+          </article>
+          <article class="launch-slide">
+            <div class="launch-slide-meta">Slide 05 · Proof</div>
+            <h3>Back it up with benchmark scorecards and real artifacts.</h3>
+            <p>Use the public benchmark page plus the real <code>llama.cpp</code> task packet and DeepWiki-style brief to prove the product is not just a mockup.</p>
+            <div class="panel-chip">Show examples, not claims</div>
+          </article>
+          <article class="launch-slide">
+            <div class="launch-slide-meta">Slide 06 · Distribution</div>
+            <h3>Live now across the surfaces people actually use.</h3>
+            <p>npm, Claude Code plugin path, OpenClaw skills, GitHub, and the official MCP Registry all point back to the same product surface.</p>
+            <div class="panel-chip">Close with availability</div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-label">Listing copy</div>
+        <h2>Use this for the Product Hunt submission itself.</h2>
+        <div class="launch-copy-grid">
+          <article class="card">
+            <div class="card-kicker">Tagline</div>
+            <h3>Turn any repo into task-shaped context for coding agents</h3>
+            <div class="code-card">
+              <pre id="launch-tagline" class="code-block"><code>Turn any repo into task-shaped context for coding agents</code></pre>
+              <button class="copy-button" type="button" data-copy-target="launch-tagline">Copy</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-kicker">Short description</div>
+            <h3>Live, specific, and product-shaped.</h3>
+            <div class="code-card">
+              <pre id="launch-description" class="code-block"><code>Open-source repo analysis for coding agents. Cartograph maps the repo, builds a typed task packet, and loads only the context the next agent needs. CLI first, MCP optional, with Claude Code and OpenClaw paths included.</code></pre>
+              <button class="copy-button" type="button" data-copy-target="launch-description">Copy</button>
+            </div>
+          </article>
+
+          <article class="card card-accent">
+            <div class="card-kicker">Primary URL</div>
+            <h3>Submit this page, not the GitHub repo.</h3>
+            <ul class="bullet-list" role="list">
+              <li><code>https://cartograph.making-minds.ai/launch/</code></li>
+              <li>Use the homepage and example artifacts as supporting links.</li>
+            </ul>
+          </article>
+        </div>
+
+        <article class="contract-card launch-comment-card">
+          <div class="card-kicker">Maker first comment</div>
+          <h3>Open with the problem and the workflow.</h3>
+          <div class="code-card">
+            <pre id="launch-comment" class="code-block"><code>I built Cartograph because every coding agent workflow I watched wasted context on repo orientation before doing useful work.
+
+The goal is simple: map the repo, build a task packet for the actual job, then load the minimum context needed for that job.
+
+This release is centered on analyze -> packet -> context. Cartograph is live today as a CLI, an optional MCP server, a Claude Code plugin path, and an OpenClaw skill path, all riding on the same core analysis engine.
+
+The site also includes public benchmark scorecards plus a real llama.cpp task packet and DeepWiki-style brief so people can inspect the outputs instead of trusting screenshots.
+
+I’m most interested in feedback on where packets still drift in large repos, what repo shapes should be benchmarked next, and what would make the handoff from packet to actual coding work tighter.</code></pre>
+            <button class="copy-button" type="button" data-copy-target="launch-comment">Copy</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section-surface">
+      <div class="container">
+        <div class="section-label">Proof links</div>
+        <h2>Use public proof, not abstract claims.</h2>
+        <div class="example-grid">
+          <article class="card">
+            <div class="card-kicker">Quickstart</div>
+            <h3>Get from install to first packet fast.</h3>
+            <ul class="bullet-list" role="list">
+              <li><a href="../index.html#quickstart">5-minute quickstart</a></li>
+              <li><a href="../index.html#hosts">Host install paths</a></li>
+            </ul>
+          </article>
+          <article class="card">
+            <div class="card-kicker">Examples</div>
+            <h3>Show the real artifacts.</h3>
+            <ul class="bullet-list" role="list">
+              <li><a href="../examples/llama-cpp-task-packet.md">llama.cpp task packet</a></li>
+              <li><a href="../examples/llama-cpp-deepwiki.md">DeepWiki-style brief</a></li>
+            </ul>
+          </article>
+          <article class="card">
+            <div class="card-kicker">Benchmarks</div>
+            <h3>Point skeptics at the scorecards.</h3>
+            <ul class="bullet-list" role="list">
+              <li><a href="../examples/benchmarks.html">Benchmark scorecards</a></li>
+              <li><a href="https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.anthony-maio/cartograph" target="_blank" rel="noopener noreferrer">official MCP Registry listing</a></li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container-wide footer-inner">
+      <div>
+        <div class="footer-brand">Cartograph</div>
+        <p class="footer-copy">Product Hunt launch surface, listing copy, and screenshot storyboard.</p>
+      </div>
+      <div class="footer-links">
+        <a href="../index.html">Home</a>
+        <a href="../examples/index.html">Examples</a>
+        <a href="../examples/benchmarks.html">Benchmarks</a>
+        <a href="../privacy.html">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../app.js"></script>
+</body>
+</html>

@@ -10,8 +10,10 @@ test("quickstart site includes the core install and usage path", () => {
   const indexPath = path.join(repoRoot, "site", "index.html");
   const stylePath = path.join(repoRoot, "site", "style.css");
   const privacyPath = path.join(repoRoot, "site", "privacy.html");
+  const launchPath = path.join(repoRoot, "site", "launch", "index.html");
   const examplesIndexPath = path.join(repoRoot, "site", "examples", "index.html");
   const benchmarksPath = path.join(repoRoot, "site", "examples", "benchmarks.html");
+  const launchKitPath = path.join(repoRoot, "docs", "launch", "product-hunt-launch-kit.md");
   const packetMarkdownPath = path.join(repoRoot, "site", "examples", "llama-cpp-task-packet.md");
   const packetJsonPath = path.join(repoRoot, "site", "examples", "llama-cpp-task-packet.json");
   const deepwikiPath = path.join(repoRoot, "site", "examples", "llama-cpp-deepwiki.md");
@@ -23,8 +25,10 @@ test("quickstart site includes the core install and usage path", () => {
   assert.ok(fs.existsSync(indexPath), "site/index.html should exist");
   assert.ok(fs.existsSync(stylePath), "site/style.css should exist");
   assert.ok(fs.existsSync(privacyPath), "site/privacy.html should exist");
+  assert.ok(fs.existsSync(launchPath), "site/launch/index.html should exist");
   assert.ok(fs.existsSync(examplesIndexPath), "site/examples/index.html should exist");
   assert.ok(fs.existsSync(benchmarksPath), "site/examples/benchmarks.html should exist");
+  assert.ok(fs.existsSync(launchKitPath), "docs/launch/product-hunt-launch-kit.md should exist");
   assert.ok(fs.existsSync(packetMarkdownPath), "site/examples/llama-cpp-task-packet.md should exist");
   assert.ok(fs.existsSync(packetJsonPath), "site/examples/llama-cpp-task-packet.json should exist");
   assert.ok(fs.existsSync(deepwikiPath), "site/examples/llama-cpp-deepwiki.md should exist");
@@ -35,6 +39,8 @@ test("quickstart site includes the core install and usage path", () => {
 
   const html = fs.readFileSync(indexPath, "utf-8");
   const privacyHtml = fs.readFileSync(privacyPath, "utf-8");
+  const launchHtml = fs.readFileSync(launchPath, "utf-8");
+  const launchKit = fs.readFileSync(launchKitPath, "utf-8");
   const examplesHtml = fs.readFileSync(examplesIndexPath, "utf-8");
   const benchmarksHtml = fs.readFileSync(benchmarksPath, "utf-8");
 
@@ -52,6 +58,7 @@ test("quickstart site includes the core install and usage path", () => {
     "shared dependency hubs",
     "io.github.anthony-maio/cartograph",
     "registry.modelcontextprotocol.io",
+    "launch/index.html",
     "examples/index.html",
     "examples/benchmarks.html",
     "examples/llama-cpp-task-packet.md",
@@ -79,6 +86,33 @@ test("quickstart site includes the core install and usage path", () => {
     "llama.cpp",
   ]) {
     assert.match(examplesHtml, new RegExp(escapeForRegExp(fragment), "i"));
+  }
+
+  for (const fragment of [
+    "Product Hunt launch surface",
+    "Turn any repo into task-shaped context for coding agents",
+    "Analyze -> Packet -> Context",
+    "Product Hunt submission",
+    "Maker first comment",
+    "Gallery storyboard",
+    "Install with npm",
+    "Benchmark proof",
+    "llama.cpp",
+    "Claude Code",
+    "OpenClaw",
+  ]) {
+    assert.match(launchHtml, new RegExp(escapeForRegExp(fragment), "i"));
+  }
+
+  for (const fragment of [
+    "Product Hunt Launch Kit",
+    "Primary submission URL",
+    "Tagline",
+    "Maker first comment",
+    "Gallery storyboard",
+    "Asset checklist",
+  ]) {
+    assert.match(launchKit, new RegExp(escapeForRegExp(fragment), "i"));
   }
 
   for (const fragment of [

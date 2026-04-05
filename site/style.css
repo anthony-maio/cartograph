@@ -622,6 +622,52 @@ html[data-theme="light"] .code-block {
   text-transform: lowercase;
 }
 
+.launch-deck,
+.launch-copy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.launch-slide {
+  min-height: 20rem;
+  padding: 1.45rem;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(165deg, rgba(222, 142, 79, 0.12), rgba(107, 184, 173, 0.05)),
+    var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.launch-slide h3 {
+  margin: 0;
+  font-size: 1.7rem;
+  line-height: 1.06;
+}
+
+.launch-slide p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.launch-slide-meta {
+  color: var(--accent-cool);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.launch-comment-card {
+  margin-top: 1rem;
+}
+
 .site-footer {
   padding: 2rem 0 2.8rem;
   border-top: 1px solid var(--line);
@@ -701,6 +747,8 @@ html[data-theme="light"] .code-block {
   .comparison-grid,
   .host-grid,
   .example-grid,
+  .launch-deck,
+  .launch-copy-grid,
   .skill-grid,
   .contract-grid {
     grid-template-columns: 1fr;
