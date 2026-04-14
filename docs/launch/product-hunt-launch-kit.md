@@ -9,6 +9,7 @@
 - `https://cartograph.making-minds.ai/`
 - `https://cartograph.making-minds.ai/examples/index.html`
 - `https://cartograph.making-minds.ai/examples/benchmarks.html`
+- `https://cartograph.making-minds.ai/launch/assets/index.html`
 - `https://www.npmjs.com/package/@anthony-maio/cartograph`
 - `https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.anthony-maio/cartograph`
 
@@ -79,3 +80,19 @@ I'm most interested in feedback on where packets still drift in large repos, wha
 - Launch page verified on desktop and mobile
 - Example artifact links verified
 - npm / GitHub / MCP Registry links verified
+
+## Generated asset files
+
+- `site/launch/assets/thumbnail.png`
+- `site/launch/assets/gallery-01-problem.png`
+- `site/launch/assets/gallery-02-workflow.png`
+- `site/launch/assets/gallery-03-analyze.png`
+- `site/launch/assets/gallery-04-packet.png`
+- `site/launch/assets/gallery-05-proof.png`
+- `site/launch/assets/gallery-06-distribution.png`
+
+Render them with:
+
+```bash
+node scripts/render-launch-assets.mjs
+```

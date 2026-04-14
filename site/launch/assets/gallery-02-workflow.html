@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartograph Slide 02</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets.css">
+</head>
+<body>
+  <main class="asset-shell" data-size="gallery">
+    <div class="asset-frame">
+      <section class="asset-card">
+        <div class="asset-slide-layout">
+          <div>
+            <div class="asset-slide-tag">Slide 02 · Workflow</div>
+            <h1 class="asset-slide-title">Analyze -> Packet -> Context</h1>
+            <p class="asset-slide-copy">Cartograph maps the repo, builds a typed task packet, and loads the smallest useful working set for the next agent.</p>
+            <div class="asset-proof">
+              <div class="asset-stat">
+                <div class="asset-stat-value">Analyze</div>
+                <div class="asset-stat-label">rank files and hubs</div>
+              </div>
+              <div class="asset-stat">
+                <div class="asset-stat-value">Packet</div>
+                <div class="asset-stat-label">shape the actual job</div>
+              </div>
+              <div class="asset-stat">
+                <div class="asset-stat-value">Context</div>
+                <div class="asset-stat-label">load only what matters</div>
+              </div>
+            </div>
+          </div>
+          <aside class="asset-highlight">
+            <div class="asset-code-label">CLI-first path</div>
+            <div class="asset-code">cartograph analyze ./repo --static
+cartograph packet ./repo --type bug-fix --task "fix auth"
+cartograph context ./repo --task "trace auth flow" --json</div>
+            <div class="asset-rail">
+              <span class="asset-badge">summary-first analyze</span>
+              <span class="asset-badge">typed task packets</span>
+              <span class="asset-badge">minimal task context</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

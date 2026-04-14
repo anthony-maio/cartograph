@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cartograph Slide 03</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets.css">
+</head>
+<body>
+  <main class="asset-shell" data-size="gallery">
+    <div class="asset-frame">
+      <section class="asset-card">
+        <div class="asset-slide-layout">
+          <div>
+            <div class="asset-slide-tag">Slide 03 · Analyze</div>
+            <h1 class="asset-slide-title">Start with a human-readable repo map.</h1>
+            <p class="asset-slide-copy">Summary-first analysis tells you what matters, where the dependency hubs are, and which command to run next.</p>
+            <div class="asset-list">
+              <div class="asset-list-item">What matters first</div>
+              <div class="asset-list-item">Shared dependency hubs</div>
+              <div class="asset-list-item">Next recommended action</div>
+            </div>
+          </div>
+          <aside class="asset-highlight">
+            <div class="asset-code-label">Summary-first output</div>
+            <div class="asset-code">Repo: llama.cpp
+
+What matters:
+- tools/mtmd/models/dots_ocr.cpp
+- convert_hf_to_gguf.py
+- gguf-py/tests/test_convert_hf_to_gguf_dots_ocr.py
+
+Dependency hubs:
+- gguf conversion pipeline
+- mtmd adapter surface
+
+Next:
+Run cartograph packet --type bug-fix</div>
+          </aside>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

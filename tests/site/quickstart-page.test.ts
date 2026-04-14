@@ -11,6 +11,15 @@ test("quickstart site includes the core install and usage path", () => {
   const stylePath = path.join(repoRoot, "site", "style.css");
   const privacyPath = path.join(repoRoot, "site", "privacy.html");
   const launchPath = path.join(repoRoot, "site", "launch", "index.html");
+  const launchAssetsIndexPath = path.join(repoRoot, "site", "launch", "assets", "index.html");
+  const launchAssetsCssPath = path.join(repoRoot, "site", "launch", "assets", "assets.css");
+  const launchThumbnailPath = path.join(repoRoot, "site", "launch", "assets", "thumbnail.png");
+  const launchGalleryProblemPath = path.join(repoRoot, "site", "launch", "assets", "gallery-01-problem.png");
+  const launchGalleryWorkflowPath = path.join(repoRoot, "site", "launch", "assets", "gallery-02-workflow.png");
+  const launchGalleryAnalyzePath = path.join(repoRoot, "site", "launch", "assets", "gallery-03-analyze.png");
+  const launchGalleryPacketPath = path.join(repoRoot, "site", "launch", "assets", "gallery-04-packet.png");
+  const launchGalleryProofPath = path.join(repoRoot, "site", "launch", "assets", "gallery-05-proof.png");
+  const launchGalleryDistributionPath = path.join(repoRoot, "site", "launch", "assets", "gallery-06-distribution.png");
   const examplesIndexPath = path.join(repoRoot, "site", "examples", "index.html");
   const benchmarksPath = path.join(repoRoot, "site", "examples", "benchmarks.html");
   const launchKitPath = path.join(repoRoot, "docs", "launch", "product-hunt-launch-kit.md");
@@ -26,6 +35,15 @@ test("quickstart site includes the core install and usage path", () => {
   assert.ok(fs.existsSync(stylePath), "site/style.css should exist");
   assert.ok(fs.existsSync(privacyPath), "site/privacy.html should exist");
   assert.ok(fs.existsSync(launchPath), "site/launch/index.html should exist");
+  assert.ok(fs.existsSync(launchAssetsIndexPath), "site/launch/assets/index.html should exist");
+  assert.ok(fs.existsSync(launchAssetsCssPath), "site/launch/assets/assets.css should exist");
+  assert.ok(fs.existsSync(launchThumbnailPath), "site/launch/assets/thumbnail.png should exist");
+  assert.ok(fs.existsSync(launchGalleryProblemPath), "site/launch/assets/gallery-01-problem.png should exist");
+  assert.ok(fs.existsSync(launchGalleryWorkflowPath), "site/launch/assets/gallery-02-workflow.png should exist");
+  assert.ok(fs.existsSync(launchGalleryAnalyzePath), "site/launch/assets/gallery-03-analyze.png should exist");
+  assert.ok(fs.existsSync(launchGalleryPacketPath), "site/launch/assets/gallery-04-packet.png should exist");
+  assert.ok(fs.existsSync(launchGalleryProofPath), "site/launch/assets/gallery-05-proof.png should exist");
+  assert.ok(fs.existsSync(launchGalleryDistributionPath), "site/launch/assets/gallery-06-distribution.png should exist");
   assert.ok(fs.existsSync(examplesIndexPath), "site/examples/index.html should exist");
   assert.ok(fs.existsSync(benchmarksPath), "site/examples/benchmarks.html should exist");
   assert.ok(fs.existsSync(launchKitPath), "docs/launch/product-hunt-launch-kit.md should exist");
@@ -40,6 +58,7 @@ test("quickstart site includes the core install and usage path", () => {
   const html = fs.readFileSync(indexPath, "utf-8");
   const privacyHtml = fs.readFileSync(privacyPath, "utf-8");
   const launchHtml = fs.readFileSync(launchPath, "utf-8");
+  const launchAssetsHtml = fs.readFileSync(launchAssetsIndexPath, "utf-8");
   const launchKit = fs.readFileSync(launchKitPath, "utf-8");
   const examplesHtml = fs.readFileSync(examplesIndexPath, "utf-8");
   const benchmarksHtml = fs.readFileSync(benchmarksPath, "utf-8");
@@ -100,8 +119,18 @@ test("quickstart site includes the core install and usage path", () => {
     "llama.cpp",
     "Claude Code",
     "OpenClaw",
+    "assets/index.html",
   ]) {
     assert.match(launchHtml, new RegExp(escapeForRegExp(fragment), "i"));
+  }
+
+  for (const fragment of [
+    "Cartograph Product Hunt asset kit",
+    "thumbnail.png",
+    "gallery-01-problem.png",
+    "gallery-06-distribution.png",
+  ]) {
+    assert.match(launchAssetsHtml, new RegExp(escapeForRegExp(fragment), "i"));
   }
 
   for (const fragment of [
@@ -111,6 +140,8 @@ test("quickstart site includes the core install and usage path", () => {
     "Maker first comment",
     "Gallery storyboard",
     "Asset checklist",
+    "thumbnail.png",
+    "render-launch-assets.mjs",
   ]) {
     assert.match(launchKit, new RegExp(escapeForRegExp(fragment), "i"));
   }
