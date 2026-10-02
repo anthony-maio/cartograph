@@ -1,25 +1,46 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import { analyzeFiles, cleanupRepo, cloneRepo, getFileContent } from "../analyzer";
+import { analyzeFiles, getFileContent } from "../analyzer";
+import { VERSION } from "../version";
+import { CloneCache } from "./clone-cache";
+import { resolveRepo, type ResolvedRepo } from "./repo";
 import { buildTaskPacket, type TaskPacketType } from "./task-packets";
 import { resolveAnalysisContentPolicy } from "./analysis-output";
 
 const TASK_PACKET_TYPES = ["task", "bug-fix", "pr-review", "trace-flow", "change-request"] as const;
 
-interface ResolvedRepoInput {
-  repoDir: string;
-  repoId: string;
-  repoName: string;
-  needsCleanup: boolean;
+export interface CartographMcpServerOptions {
+  cloneCache?: CloneCache;
 }
 
-export function createCartographMcpServer(): McpServer {
+export function createCartographMcpServer(opts: CartographMcpServerOptions = {}): McpServer {
   const server = new McpServer({
     name: "cartograph",
-    version: "1.1.4",
+    version: VERSION,
   });
+
+  const cloneCache = opts.cloneCache ?? new CloneCache();
+  if (!opts.cloneCache) {
+    // Only clean up a cache this server owns; a caller-supplied cache is the caller's to clear
+    server.server.onclose = () => cloneCache.clear();
+  }
+
+  const withResolvedRepo = async <T>(repo: string, callback: (resolved: ResolvedRepo) => Promise<T>): Promise<T> => {
+    let release = () => {};
+    const resolved = await resolveRepo(repo, {
+      clone: async (url) => {
+        const lease = await cloneCache.acquire(url);
+        release = lease.release;
+        return lease.repoDir;
+      },
+    });
+    try {
+      return await callback(resolved);
+    } finally {
+      // Remote clones stay in the cache for follow-up calls instead of being deleted here
+      release();
+    }
+  };
 
   server.tool(
     "analyze_repo",
@@ -127,53 +148,4 @@ export function createCartographMcpServer(): McpServer {
   );
 
   return server;
-}
-
-async function withResolvedRepo<T>(repo: string, callback: (resolved: ResolvedRepoInput) => Promise<T>): Promise<T> {
-  const resolved = await resolveRepoInput(repo);
-  try {
-    return await callback(resolved);
-  } finally {
-    if (resolved.needsCleanup) {
-      cleanupRepo(resolved.repoDir);
-    }
-  }
-}
-
-async function resolveRepoInput(repo: string): Promise<ResolvedRepoInput> {
-  const isLocal = fs.existsSync(repo);
-  if (isLocal) {
-    const repoDir = path.resolve(repo);
-    return {
-      repoDir,
-      repoId: repoDir,
-      repoName: path.basename(repoDir),
-      needsCleanup: false,
-    };
-  }
-
-  const normalizedRepo = normalizeRemoteRepo(repo);
-  return {
-    repoDir: await cloneRepo(normalizedRepo),
-    repoId: normalizedRepo,
-    repoName: getRemoteRepoName(normalizedRepo),
-    needsCleanup: true,
-  };
-}
-
-function normalizeRemoteRepo(repo: string): string {
-  const trimmed = repo.trim();
-  if (trimmed.includes("github.com") && !trimmed.endsWith(".git")) {
-    return trimmed.replace(/\/$/, "") + ".git";
-  }
-  return trimmed;
-}
-
-function getRemoteRepoName(repo: string): string {
-  return repo
-    .replace(/\/$/, "")
-    .replace(/\.git$/, "")
-    .split("/")
-    .slice(-2)
-    .join("/");
 }
