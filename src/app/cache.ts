@@ -108,7 +108,8 @@ export function saveRunManifest(runDir: string, manifest: RunManifest): void {
 }
 
 function createRunId(): string {
-  return `run-${Date.now().toString(36)}`;
+  // Random suffix keeps runs started in the same millisecond from sharing a directory
+  return `run-${Date.now().toString(36)}-${crypto.randomBytes(3).toString("hex")}`;
 }
 
 function writeManifest(manifestPath: string, manifest: RunManifest): void {

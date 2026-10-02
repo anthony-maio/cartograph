@@ -45,6 +45,8 @@
     "start": "node dist/cli.cjs",
     "start:mcp": "node dist/mcp.cjs",
     "check": "tsc",
+    "version": "node scripts/sync-version.mjs && git add server.json .claude-plugin/marketplace.json plugins/cartograph/.claude-plugin/plugin.json",
+    "version:sync": "node scripts/sync-version.mjs",
     "pack:smoke": "node scripts/pack-smoke.mjs",
     "benchmark:task-packets": "node scripts/task-packet-benchmark.mjs",
     "release:check": "npm test && npm run check && npm run build && npm run pack:smoke",
