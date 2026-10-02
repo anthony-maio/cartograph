@@ -1,10 +1,12 @@
 import { Command } from "commander";
 import * as fs from "fs";
 import * as path from "path";
-import ora from "ora";
+import ora, { type Ora } from "ora";
 import chalk from "chalk";
 import { PROVIDERS, type ProviderId, type LLMConfig } from "./schema";
-import { cloneRepo, cleanupRepo, analyzeFiles, getFileContent } from "./analyzer";
+import { analyzeFiles, getFileContent } from "./analyzer";
+import { resolveRepo, type ResolvedRepo } from "./app/repo";
+import { VERSION } from "./version";
 import { summarizeFiles, synthesizeWiki, selectContext } from "./pipeline";
 import { wikiToMarkdown, contextToMarkdown, staticToMarkdown, taskPacketToMarkdown } from "./markdown";
 import { createRunWorkspace, getCacheRoot, findRunDirectory, loadRunManifest } from "./app/cache";
@@ -23,7 +25,7 @@ program.enablePositionalOptions();
 program
   .name("cartograph")
   .description("Generate intelligent wiki documentation from any Git repo. Targeted context for LLMs — only the files that matter.")
-  .version("1.1.4")
+  .version(VERSION)
   .argument("[repo]", "GitHub URL or local directory path")
   .option("-p, --provider <provider>", "LLM provider: gemini, openai, openrouter, ollama", "gemini")
   .option("-k, --key <key>", "API key (or set CARTOGRAPH_API_KEY env var)")
@@ -167,55 +169,39 @@ async function run(repo: string, opts: {
   command?: "analyze" | "context" | "wiki";
   includeContents?: boolean;
 }) {
-  // Determine if repo is local or remote
-  const isLocal = fs.existsSync(repo);
-  let repoDir: string;
-  let needsCleanup = false;
   const topN = parseInt(opts.top || "30", 10);
-
   const spinner = ora();
 
-  try {
-    // === Clone or use local ===
-    if (isLocal) {
-      repoDir = path.resolve(repo);
-      spinner.succeed(`Using local repo: ${repoDir}`);
-    } else {
-      spinner.start("Cloning repository...");
-      let url = repo.trim();
-      if (url.includes("github.com") && !url.endsWith(".git")) {
-        url = url.replace(/\/$/, "") + ".git";
-      }
-      repoDir = await cloneRepo(url);
-      needsCleanup = true;
-      spinner.succeed("Cloned repository");
+  // Validate LLM settings before cloning so a bad flag fails fast and leaves nothing behind
+  let llmConfig: LLMConfig | undefined;
+  if (!opts.static) {
+    try {
+      llmConfig = resolveLLMConfig(opts);
+    } catch (err: any) {
+      console.error(chalk.red(err.message || String(err)));
+      process.exitCode = 1;
+      return;
     }
+  }
+
+  let resolved: ResolvedRepo | undefined;
+  try {
+    resolved = await resolveRepoWithSpinner(repo, spinner);
+    const { repoDir, repoId, repoName } = resolved;
 
     // === Static Analysis ===
     spinner.start("Analyzing file structure and dependencies...");
     const { files, edges } = analyzeFiles(repoDir);
     spinner.succeed(`Found ${files.length} files, ${edges.length} dependency edges`);
 
-    // Derive repo name
-    const repoName = isLocal
-      ? path.basename(path.resolve(repo))
-      : repo.split("/").slice(-2).join("/").replace(".git", "").replace(/\/$/, "");
-    const repoId = isLocal ? repoDir : repo;
     const commandName = opts.command ?? (opts.context ? "context" : opts.static ? "analyze" : "wiki");
-
-    // Read file contents for top files
     const topFiles = files.slice(0, topN);
-    const contentPolicy = resolveAnalysisContentPolicy(files, opts.includeContents, opts.json ? "json" : "markdown");
-    const fileContents = new Map<string, string>();
-    if (contentPolicy.includeContents) {
-      for (const file of topFiles) {
-        const content = getFileContent(repoDir, file.path, 200);
-        if (content) fileContents.set(file.path, content);
-      }
-    }
 
     // === Static-only mode: no LLM, no API key ===
-    if (opts.static) {
+    if (!llmConfig) {
+      // The content policy only decides what the analyze output embeds
+      const contentPolicy = resolveAnalysisContentPolicy(files, opts.includeContents, opts.json ? "json" : "markdown");
+      const fileContents = contentPolicy.includeContents ? loadFileContents(repoDir, topFiles) : new Map<string, string>();
       const output = opts.json
         ? JSON.stringify({ repoName, files, edges, fileContents: Object.fromEntries(fileContents), contentPolicy }, null, 2)
         : staticToMarkdown(repoName, files, edges, fileContents, contentPolicy);
@@ -225,32 +211,17 @@ async function run(repo: string, opts: {
       return;
     }
 
-    // === LLM modes require an API key (except Ollama) ===
-    const provider = opts.provider as ProviderId;
-    if (!PROVIDERS[provider]) {
-      console.error(chalk.red(`Error: Unknown provider "${provider}". Use: gemini, openai, openrouter, ollama`));
-      process.exit(1);
-    }
+    const config = llmConfig;
+    const providerConfig = PROVIDERS[config.provider];
 
-    const apiKey = opts.key || process.env.CARTOGRAPH_API_KEY || (provider === "ollama" ? "ollama" : "");
-    if (!apiKey) {
-      console.error(chalk.red("Error: API key required. Use --key, set CARTOGRAPH_API_KEY, use -p ollama for local, or --static for no-LLM mode."));
-      process.exit(1);
-    }
-
-    const providerConfig = PROVIDERS[provider];
-    const config: LLMConfig = {
-      apiKey,
-      provider,
-      fastModel: opts.model || providerConfig.defaultFastModel,
-      strongModel: opts.model || providerConfig.defaultStrongModel,
-    };
+    // The LLM always needs to read the files it summarizes, whatever the output policy says
+    const fileContents = loadFileContents(repoDir, topFiles);
 
     // === Summarize ===
     spinner.start(`Summarizing top ${topFiles.length} files via ${providerConfig.name} (${config.fastModel})...`);
     const summaries = await summarizeFiles(config, files, fileContents, (completed, total) => {
       spinner.text = `Summarizing files: ${completed}/${total}...`;
-    });
+    }, topN);
     spinner.succeed(`Summarized ${summaries.length} files`);
 
     // === Context Selection Mode ===
@@ -285,14 +256,12 @@ async function run(repo: string, opts: {
 
     writeOutput(output, opts.output);
     cacheRunOutput(repoId, commandName, "wiki", opts.json ? "json" : "md", output);
-
   } catch (err: any) {
+    // process.exit() here would skip the finally block and leak the clone
     spinner.fail(chalk.red(err.message || String(err)));
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
-    if (needsCleanup && repoDir!) {
-      cleanupRepo(repoDir!);
-    }
+    resolved?.cleanup();
   }
 }
 
@@ -303,39 +272,30 @@ async function runPacket(repo: string, opts: {
   output?: string;
   markdown?: boolean;
 }) {
-  const isLocal = fs.existsSync(repo);
-  let repoDir: string;
-  let needsCleanup = false;
   const spinner = ora();
 
+  let taskType: TaskPacketType;
   try {
-    if (isLocal) {
-      repoDir = path.resolve(repo);
-      spinner.succeed(`Using local repo: ${repoDir}`);
-    } else {
-      spinner.start("Cloning repository...");
-      let url = repo.trim();
-      if (url.includes("github.com") && !url.endsWith(".git")) {
-        url = url.replace(/\/$/, "") + ".git";
-      }
-      repoDir = await cloneRepo(url);
-      needsCleanup = true;
-      spinner.succeed("Cloned repository");
-    }
+    taskType = parseTaskPacketType(opts.type);
+  } catch (err: any) {
+    console.error(chalk.red(err.message || String(err)));
+    process.exitCode = 1;
+    return;
+  }
+
+  let resolved: ResolvedRepo | undefined;
+  try {
+    resolved = await resolveRepoWithSpinner(repo, spinner);
+    const { repoDir, repoId, repoName } = resolved;
 
     spinner.start("Analyzing file structure and dependencies...");
     const { files, edges } = analyzeFiles(repoDir);
     spinner.succeed(`Found ${files.length} files, ${edges.length} dependency edges`);
 
-    const repoName = isLocal
-      ? path.basename(path.resolve(repo))
-      : repo.split("/").slice(-2).join("/").replace(".git", "").replace(/\/$/, "");
-    const repoId = isLocal ? repoDir : repo;
-
     const packet = buildTaskPacket({
       repoId,
       repoName,
-      taskType: parseTaskPacketType(opts.type),
+      taskType,
       taskSummary: opts.task,
       files,
       edges,
@@ -350,12 +310,52 @@ async function runPacket(repo: string, opts: {
     cacheRunOutput(repoId, "packet", "task-packet", opts.markdown ? "md" : "json", output);
   } catch (err: any) {
     spinner.fail(chalk.red(err.message || String(err)));
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
-    if (needsCleanup && repoDir!) {
-      cleanupRepo(repoDir!);
-    }
+    resolved?.cleanup();
   }
+}
+
+async function resolveRepoWithSpinner(repo: string, spinner: Ora): Promise<ResolvedRepo> {
+  if (fs.existsSync(repo)) {
+    const resolved = await resolveRepo(repo);
+    spinner.succeed(`Using local repo: ${resolved.repoDir}`);
+    return resolved;
+  }
+
+  spinner.start("Cloning repository...");
+  const resolved = await resolveRepo(repo);
+  spinner.succeed("Cloned repository");
+  return resolved;
+}
+
+function resolveLLMConfig(opts: { provider: string; key?: string; model?: string }): LLMConfig {
+  const provider = opts.provider as ProviderId;
+  if (!PROVIDERS[provider]) {
+    throw new Error(`Error: Unknown provider "${opts.provider}". Use: gemini, openai, openrouter, ollama`);
+  }
+
+  const apiKey = opts.key || process.env.CARTOGRAPH_API_KEY || (provider === "ollama" ? "ollama" : "");
+  if (!apiKey) {
+    throw new Error("Error: API key required. Use --key, set CARTOGRAPH_API_KEY, use -p ollama for local, or --static for no-LLM mode.");
+  }
+
+  const providerConfig = PROVIDERS[provider];
+  return {
+    apiKey,
+    provider,
+    fastModel: opts.model || providerConfig.defaultFastModel,
+    strongModel: opts.model || providerConfig.defaultStrongModel,
+  };
+}
+
+function loadFileContents(repoDir: string, files: Array<{ path: string }>, maxLines = 200): Map<string, string> {
+  const contents = new Map<string, string>();
+  for (const file of files) {
+    const content = getFileContent(repoDir, file.path, maxLines);
+    if (content) contents.set(file.path, content);
+  }
+  return contents;
 }
 
 function writeOutput(content: string, outputPath?: string) {

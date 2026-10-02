@@ -18,10 +18,11 @@ export async function summarizeFiles(
   files: FileNode[],
   fileContents: Map<string, string>,
   onProgress: (completed: number, total: number) => void,
+  limit: number = 30,
 ): Promise<FileSummary[]> {
   const client = createLLMClient(config);
   const summaries: FileSummary[] = [];
-  const topFiles = files.slice(0, 30);
+  const topFiles = files.slice(0, limit);
   const total = topFiles.length;
 
   // Batch size: Gemini has generous RPM, Ollama runs locally (sequential is fine), others are moderate
