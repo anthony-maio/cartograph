@@ -44,8 +44,47 @@ jobs:
           VERSION="$(node -p "require('./package.json').version")"
           node -e "const fs=require('fs'); const pkg=JSON.parse(fs.readFileSync('server.json','utf8')); pkg.version='${VERSION}'; pkg.packages=pkg.packages.map(p => ({...p, version:'${VERSION}'})); fs.writeFileSync('server.json', JSON.stringify(pkg, null, 2) + '\n');"
 
+      # npm rewrites package.json at publish time when it finds problems (npm 12 flagged our
+      # "./dist/cli.cjs" bin this way), so fail the release instead of shipping a silent rewrite.
+      - name: Verify npm will not rewrite package.json
+        shell: bash
+        run: |
+          # The dry run errors on an already-published version (re-runs); only the warnings matter here
+          OUTPUT="$(npm publish --dry-run --access public 2>&1 || true)"
+          echo "$OUTPUT"
+          if grep -q "auto-corrected" <<< "$OUTPUT"; then
+            echo "::error::npm would auto-correct package.json; run 'npm pkg fix' locally and commit the result"
+            exit 1
+          fi
+
+      # Skipped when the version already exists so a re-run can finish the MCP registry step.
       - name: Publish package to npm
-        run: npm publish --access public
+        shell: bash
+        run: |
+          NAME="$(node -p "require('./package.json').name")"
+          VERSION="$(node -p "require('./package.json').version")"
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "${NAME}@${VERSION} is already on npm, skipping publish"
+          else
+            npm publish --access public
+          fi
+
+      # The MCP registry validates against npm, which can take a few minutes to show a new version.
+      - name: Wait for npm to serve the new version
+        shell: bash
+        run: |
+          NAME="$(node -p "require('./package.json').name")"
+          VERSION="$(node -p "require('./package.json').version")"
+          for attempt in $(seq 1 30); do
+            if npm view "${NAME}@${VERSION}" version --prefer-online >/dev/null 2>&1; then
+              echo "${NAME}@${VERSION} is visible on npm"
+              exit 0
+            fi
+            echo "Attempt ${attempt}: not visible yet, waiting 20s"
+            sleep 20
+          done
+          echo "::error::${NAME}@${VERSION} did not appear on npm within 10 minutes"
+          exit 1
 
       - name: Install mcp-publisher
         shell: bash
