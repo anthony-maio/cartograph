@@ -36,7 +36,7 @@
     "SECURITY.md"
   ],
   "bin": {
-    "cartograph": "./dist/cli.cjs"
+    "cartograph": "dist/cli.cjs"
   },
   "scripts": {
     "dev": "tsx src/cli.ts",

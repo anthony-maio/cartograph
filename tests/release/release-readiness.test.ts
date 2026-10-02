@@ -46,3 +46,19 @@ test("repository includes the minimum public release surface", () => {
   assert.match(ciWorkflow, /npm run build/);
   assert.match(ciWorkflow, /npm run pack:smoke/);
 });
+
+test("bin entries survive npm publish normalization", () => {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, "package.json"), "utf-8"),
+  ) as { bin: Record<string, string>; files: string[] };
+
+  for (const [name, target] of Object.entries(packageJson.bin)) {
+    // npm 12 flags "./path" bin targets as invalid at publish time; keep the normalized form so the
+    // publish workflow's auto-correction check stays quiet
+    assert.ok(!target.startsWith("./"), `bin[${name}] should be "${target.slice(2)}", not "${target}"`);
+    assert.ok(
+      packageJson.files.some((entry) => target === entry || target.startsWith(`${entry}/`)),
+      `bin[${name}] -> ${target} is not covered by package.json "files"`,
+    );
+  }
+});
