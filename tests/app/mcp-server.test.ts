@@ -119,3 +119,34 @@ test("analyze_repo compacts small repos by default and can opt into embedded con
     await Promise.allSettled([client.close(), server.close()]);
   }
 });
+
+test("get_file_contents refuses paths outside the repo", async () => {
+  const server = createCartographMcpServer();
+  const client = new Client({ name: "cartograph-test-client", version: "0.0.0" });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const outer = fs.mkdtempSync(path.join(os.tmpdir(), "cartograph-mcp-escape-"));
+  const repoDir = path.join(outer, "repo");
+
+  try {
+    fs.mkdirSync(repoDir);
+    fs.writeFileSync(path.join(repoDir, "index.ts"), "export const ok = 1;\n");
+    fs.writeFileSync(path.join(outer, "secret.txt"), "TOP SECRET\n");
+
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+
+    const result = await client.callTool({
+      name: "get_file_contents",
+      arguments: { repo: repoDir, files: ["index.ts", "../secret.txt", path.join(outer, "secret.txt")] },
+    });
+
+    const textPart = result.content.find((part) => part.type === "text");
+    assert.ok(textPart && "text" in textPart);
+    const contents = JSON.parse(textPart.text) as Record<string, string>;
+
+    assert.match(contents["index.ts"], /ok/);
+    assert.doesNotMatch(textPart.text, /TOP SECRET/);
+  } finally {
+    fs.rmSync(outer, { recursive: true, force: true });
+    await Promise.allSettled([client.close(), server.close()]);
+  }
+});

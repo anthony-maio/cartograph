@@ -1,4 +1,5 @@
 import simpleGit from "simple-git";
+import { execFileSync } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -9,7 +10,7 @@ const LANG_MAP: Record<string, string> = {
   ".ts": "typescript", ".tsx": "typescript", ".js": "javascript", ".jsx": "javascript",
   ".mjs": "javascript", ".cjs": "javascript", ".py": "python", ".go": "go",
   ".rs": "rust", ".java": "java", ".kt": "kotlin", ".rb": "ruby",
-  ".php": "php", ".c": "c", ".cpp": "cpp", ".h": "c", ".hpp": "cpp",
+  ".php": "php", ".c": "c", ".cpp": "cpp", ".cc": "cpp", ".h": "c", ".hpp": "cpp",
   ".cs": "csharp", ".swift": "swift", ".scala": "scala", ".dart": "dart",
   ".vue": "vue", ".svelte": "svelte", ".md": "markdown", ".json": "json",
   ".yaml": "yaml", ".yml": "yaml", ".toml": "toml", ".sql": "sql",
@@ -36,28 +37,31 @@ const SKIP_FILES = new Set([
 // Max file size to analyze (100KB)
 const MAX_FILE_SIZE = 100 * 1024;
 
+// JS-family import patterns. `[^'"`;]*?` spans multi-line specifier lists and
+// default + named combos like `import a, { b } from "x"`.
+const JS_IMPORT_PATTERNS = [
+  /(?:^|[^\w$.])(?:import|export)\s+(?:type\s+)?[^'"`;]*?\bfrom\s*['"]([^'"]+)['"]/g,
+  /(?:^|[^\w$.])import\s*['"]([^'"]+)['"]/g,
+  /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+  /\brequire\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+];
+
 // Import regex patterns by language group
 const IMPORT_PATTERNS: Record<string, RegExp[]> = {
-  typescript: [
-    /import\s+(?:type\s+)?(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g,
-    /import\s+['"]([^'"]+)['"]/g,
-    /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
-  ],
-  javascript: [
-    /import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+['"]([^'"]+)['"]/g,
-    /import\s+['"]([^'"]+)['"]/g,
-    /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
-  ],
+  typescript: JS_IMPORT_PATTERNS,
+  javascript: JS_IMPORT_PATTERNS,
+  vue: JS_IMPORT_PATTERNS,
+  svelte: JS_IMPORT_PATTERNS,
   python: [
-    /from\s+([\w.]+)\s+import/g,
-    /^import\s+([\w.]+)/gm,
+    /^\s*from\s+([\w.]+)\s+import/gm,
+    /^\s*import\s+([\w.]+)/gm,
   ],
   go: [
     /import\s+"([^"]+)"/g,
     /import\s+\w+\s+"([^"]+)"/g,
   ],
   rust: [
-    /use\s+([\w:]+)/g,
+    /\buse\s+([\w:]+)/g,
     /extern\s+crate\s+(\w+)/g,
   ],
   java: [
@@ -77,6 +81,12 @@ const IMPORT_PATTERNS: Record<string, RegExp[]> = {
   ],
   csharp: [
     /using\s+([\w.]+)/g,
+  ],
+  c: [
+    /#\s*include\s*"([^"]+)"/g,
+  ],
+  cpp: [
+    /#\s*include\s*"([^"]+)"/g,
   ],
 };
 
@@ -124,6 +134,8 @@ const CONFIG_PATTERNS = [
   /^README\.md$/i, /^CLAUDE\.md$/i, /^CONTRIBUTING\.md$/i,
 ];
 
+const JS_RESOLVE_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".vue", ".svelte"];
+
 export async function cloneRepo(repoUrl: string, branch?: string): Promise<string> {
   const tmpDir = path.join(os.tmpdir(), createCloneDirName(process.platform));
   fs.mkdirSync(tmpDir, { recursive: true });
@@ -131,7 +143,12 @@ export async function cloneRepo(repoUrl: string, branch?: string): Promise<strin
   const git = simpleGit();
   const cloneOptions = buildCloneOptions(branch, process.platform);
 
-  await git.clone(repoUrl, tmpDir, cloneOptions);
+  try {
+    await git.clone(repoUrl, tmpDir, cloneOptions);
+  } catch (err) {
+    cleanupRepo(tmpDir);
+    throw err;
+  }
   return tmpDir;
 }
 
@@ -159,36 +176,64 @@ export function createCloneDirName(platform: NodeJS.Platform = process.platform)
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function walkDir(dir: string, basePath: string = ""): string[] {
-  const files: string[] = [];
-
-  try {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-      const relativePath = basePath ? `${basePath}/${entry.name}` : entry.name;
-
-      if (entry.isDirectory()) {
-        if (!SKIP_DIRS.has(entry.name) && !entry.name.startsWith(".")) {
-          files.push(...walkDir(fullPath, relativePath));
-        }
-      } else if (entry.isFile()) {
-        if (!SKIP_FILES.has(entry.name)) {
-          files.push(relativePath);
-        }
-      }
-    }
-  } catch {
-    // Skip unreadable directories
-  }
-
-  return files;
+function isIncludedPath(relativePath: string): boolean {
+  const segments = relativePath.split("/");
+  const fileName = segments.pop()!;
+  if (SKIP_FILES.has(fileName)) return false;
+  return segments.every(segment => !SKIP_DIRS.has(segment) && !segment.startsWith("."));
 }
 
-function extractImports(content: string, language: string): string[] {
-  const langGroup = language === "tsx" ? "typescript" :
-                    language === "jsx" ? "javascript" : language;
-  const patterns = IMPORT_PATTERNS[langGroup];
+// Prefer git's view of the tree so .gitignore is respected; fall back to a
+// plain walk for non-git directories or when git reports nothing.
+export function listRepoFiles(repoDir: string): string[] {
+  const gitFiles = listGitFiles(repoDir);
+  if (gitFiles && gitFiles.length > 0) return gitFiles;
+  return walkDir(repoDir);
+}
+
+function listGitFiles(repoDir: string): string[] | null {
+  try {
+    const output = execFileSync(
+      "git",
+      ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+      { cwd: repoDir, encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 256 * 1024 * 1024 },
+    );
+    return Array.from(new Set(output.split("\0").filter(Boolean))).filter(isIncludedPath);
+  } catch {
+    return null;
+  }
+}
+
+function walkDir(repoDir: string): string[] {
+  const files: string[] = [];
+  const pending: string[] = [""];
+
+  while (pending.length > 0) {
+    const relativeDir = pending.pop()!;
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(path.join(repoDir, relativeDir), { withFileTypes: true });
+    } catch {
+      continue; // Skip unreadable directories
+    }
+
+    for (const entry of entries) {
+      const relativePath = relativeDir ? `${relativeDir}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        if (!SKIP_DIRS.has(entry.name) && !entry.name.startsWith(".")) {
+          pending.push(relativePath);
+        }
+      } else if (entry.isFile() && !SKIP_FILES.has(entry.name)) {
+        files.push(relativePath);
+      }
+    }
+  }
+
+  return files.sort();
+}
+
+export function extractImports(content: string, language: string): string[] {
+  const patterns = IMPORT_PATTERNS[language];
   if (!patterns) return [];
 
   const imports: Set<string> = new Set();
@@ -199,13 +244,19 @@ function extractImports(content: string, language: string): string[] {
       if (match[1]) imports.add(match[1].trim());
     }
   }
+
+  if (language === "go") {
+    // Grouped form: import ( "a"; alias "b" )
+    for (const block of content.matchAll(/^import\s*\(([\s\S]*?)^\)/gm)) {
+      for (const spec of block[1].matchAll(/"([^"]+)"/g)) imports.add(spec[1]);
+    }
+  }
+
   return Array.from(imports);
 }
 
 function extractExports(content: string, language: string): string[] {
-  const langGroup = language === "tsx" ? "typescript" :
-                    language === "jsx" ? "javascript" : language;
-  const patterns = EXPORT_PATTERNS[langGroup];
+  const patterns = EXPORT_PATTERNS[language];
   if (!patterns) return [];
 
   const exports: Set<string> = new Set();
@@ -227,9 +278,8 @@ function extractExports(content: string, language: string): string[] {
 }
 
 export function analyzeFiles(repoDir: string): { files: FileNode[]; edges: DependencyEdge[] } {
-  const filePaths = walkDir(repoDir);
+  const filePaths = listRepoFiles(repoDir);
   const files: FileNode[] = [];
-  const edges: DependencyEdge[] = [];
 
   // First pass: analyze each file
   for (const filePath of filePaths) {
@@ -245,6 +295,7 @@ export function analyzeFiles(repoDir: string): { files: FileNode[]; edges: Depen
 
     try {
       const stat = fs.statSync(fullPath);
+      if (!stat.isFile()) continue;
       if (stat.size > MAX_FILE_SIZE) continue;
       if (stat.size === 0) continue;
 
@@ -268,28 +319,11 @@ export function analyzeFiles(repoDir: string): { files: FileNode[]; edges: Depen
     }
   }
 
-  // Build a map for resolving relative imports
-  const filesByName = new Map<string, string>();
-  for (const f of files) {
-    const basename = path.basename(f.path, path.extname(f.path));
-    filesByName.set(basename, f.path);
-    filesByName.set(f.path, f.path);
-    // Also map without extension
-    const noExt = f.path.replace(/\.\w+$/, "");
-    filesByName.set(noExt, f.path);
-  }
+  const edges = buildDependencyEdges(repoDir, files);
 
-  // Build dependency edges
   const fanInCount = new Map<string, number>(); // how many files import this file
-  for (const file of files) {
-    for (const imp of file.imports) {
-      // Try to resolve the import to a file in the repo
-      const resolved = resolveImport(imp, file.path, filesByName);
-      if (resolved) {
-        edges.push({ from: file.path, to: resolved });
-        fanInCount.set(resolved, (fanInCount.get(resolved) || 0) + 1);
-      }
-    }
+  for (const edge of edges) {
+    fanInCount.set(edge.to, (fanInCount.get(edge.to) || 0) + 1);
   }
 
   // Compute importance scores
@@ -331,42 +365,287 @@ export function analyzeFiles(repoDir: string): { files: FileNode[]; edges: Depen
   return { files, edges };
 }
 
-function resolveImport(importPath: string, fromFile: string, fileMap: Map<string, string>): string | null {
-  // Skip external packages
-  if (!importPath.startsWith(".") && !importPath.startsWith("/") && !importPath.startsWith("@/")) {
-    // Could be a bare module. Check if any file matches by basename
-    const basename = importPath.split("/").pop() || importPath;
-    if (fileMap.has(basename)) return fileMap.get(basename)!;
+// ---------------------------------------------------------------------------
+// Import resolution
+// ---------------------------------------------------------------------------
+
+interface FileIndex {
+  paths: Set<string>;
+  // Path suffixes without extension ("models/user", "user") -> matching files
+  bySuffix: Map<string, string[]>;
+  // Directory -> files directly inside it
+  byDir: Map<string, string[]>;
+  goModules: Array<{ modulePath: string; dir: string }>;
+}
+
+function stripExt(filePath: string): string {
+  const ext = path.posix.extname(filePath);
+  return ext ? filePath.slice(0, -ext.length) : filePath;
+}
+
+function buildFileIndex(repoDir: string, files: FileNode[]): FileIndex {
+  const index: FileIndex = { paths: new Set(), bySuffix: new Map(), byDir: new Map(), goModules: [] };
+
+  for (const file of files) {
+    index.paths.add(file.path);
+
+    const segments = stripExt(file.path).split("/");
+    for (let i = 0; i < segments.length; i++) {
+      const suffix = segments.slice(i).join("/");
+      const bucket = index.bySuffix.get(suffix) ?? [];
+      bucket.push(file.path);
+      index.bySuffix.set(suffix, bucket);
+    }
+
+    const dir = path.posix.dirname(file.path);
+    const dirBucket = index.byDir.get(dir) ?? [];
+    dirBucket.push(file.path);
+    index.byDir.set(dir, dirBucket);
+
+    if (path.posix.basename(file.path) === "go.mod") {
+      try {
+        const goMod = fs.readFileSync(path.join(repoDir, file.path), "utf-8");
+        const modulePath = goMod.match(/^module\s+(\S+)/m)?.[1];
+        if (modulePath) index.goModules.push({ modulePath, dir });
+      } catch {
+        // Ignore unreadable go.mod
+      }
+    }
+  }
+
+  return index;
+}
+
+function buildDependencyEdges(repoDir: string, files: FileNode[]): DependencyEdge[] {
+  const index = buildFileIndex(repoDir, files);
+  const edges: DependencyEdge[] = [];
+  const seen = new Set<string>();
+
+  for (const file of files) {
+    for (const imp of file.imports) {
+      for (const target of resolveImport(imp, file.path, file.language, index)) {
+        const key = `${file.path}\0${target}`;
+        if (target === file.path || seen.has(key)) continue;
+        seen.add(key);
+        edges.push({ from: file.path, to: target });
+      }
+    }
+  }
+
+  return edges;
+}
+
+function first(...candidates: Array<string | undefined>): string[] {
+  const hit = candidates.find((c): c is string => c !== undefined);
+  return hit ? [hit] : [];
+}
+
+function findWithExtensions(index: FileIndex, basePath: string, extensions: string[]): string | undefined {
+  if (index.paths.has(basePath)) return basePath;
+  return extensions.map(ext => basePath + ext).find(p => index.paths.has(p));
+}
+
+function normalizeRepoRelative(p: string): string | null {
+  const normalized = path.posix.normalize(p);
+  if (normalized === ".." || normalized.startsWith("../") || normalized.startsWith("/")) return null;
+  return normalized.replace(/^\.\//, "");
+}
+
+// Match a path suffix against the index. When several files share the suffix,
+// prefer the one closest to the importing file; give up if that is still ambiguous.
+function findBySuffix(index: FileIndex, suffix: string, fromFile: string, allowedExts?: string[]): string | undefined {
+  let candidates = index.bySuffix.get(suffix) ?? [];
+  if (allowedExts) {
+    candidates = candidates.filter(c => allowedExts.includes(path.posix.extname(c)));
+  }
+  if (candidates.length <= 1) return candidates[0];
+
+  const fromSegments = fromFile.split("/");
+  const shared = (candidate: string) => {
+    const segments = candidate.split("/");
+    let n = 0;
+    while (n < segments.length && n < fromSegments.length && segments[n] === fromSegments[n]) n++;
+    return n;
+  };
+  const ranked = candidates.map(c => ({ c, n: shared(c) })).sort((a, b) => b.n - a.n);
+  return ranked[0].n > ranked[1].n ? ranked[0].c : undefined;
+}
+
+function resolveImport(importPath: string, fromFile: string, language: string, index: FileIndex): string[] {
+  const fromDir = path.posix.dirname(fromFile);
+
+  switch (language) {
+    case "typescript":
+    case "javascript":
+    case "vue":
+    case "svelte": {
+      let base: string | null;
+      if (importPath.startsWith(".")) {
+        base = normalizeRepoRelative(path.posix.join(fromDir, importPath));
+      } else if (importPath.startsWith("@/") || importPath.startsWith("~/")) {
+        // Common alias for the source root
+        const rest = importPath.slice(2);
+        return first(
+          findWithExtensions(index, `src/${rest}`, JS_RESOLVE_EXTENSIONS),
+          findWithExtensions(index, rest, JS_RESOLVE_EXTENSIONS),
+          ...JS_RESOLVE_EXTENSIONS.map(ext => findWithExtensions(index, `src/${rest}/index`, [ext])),
+        );
+      } else {
+        return []; // bare specifier = package
+      }
+      if (!base) return [];
+      // TS sources often import "./foo.js" when the file on disk is foo.ts
+      const withoutJsExt = base.replace(/\.(?:js|jsx|mjs|cjs)$/, "");
+      return first(
+        findWithExtensions(index, base, JS_RESOLVE_EXTENSIONS),
+        findWithExtensions(index, withoutJsExt, JS_RESOLVE_EXTENSIONS),
+        findWithExtensions(index, `${base}/index`, JS_RESOLVE_EXTENSIONS),
+      );
+    }
+
+    case "python": {
+      const leadingDots = importPath.match(/^\.*/)![0].length;
+      const modulePath = importPath.slice(leadingDots).replace(/\./g, "/");
+      if (leadingDots > 0) {
+        let baseDir = fromDir;
+        for (let i = 1; i < leadingDots; i++) baseDir = path.posix.dirname(baseDir);
+        const base = normalizeRepoRelative(modulePath ? path.posix.join(baseDir, modulePath) : baseDir);
+        if (!base) return [];
+        return first(
+          findWithExtensions(index, base, [".py"]),
+          findWithExtensions(index, `${base}/__init__`, [".py"]),
+        );
+      }
+      if (!modulePath) return [];
+      // Absolute import: try the repo root, then a src/-style layout via suffix match.
+      // A single-segment name only resolves next to the importer or at the root, so
+      // stdlib names like `os` or `types` do not bind to random repo files.
+      const direct = first(
+        findWithExtensions(index, modulePath, [".py"]),
+        findWithExtensions(index, `${modulePath}/__init__`, [".py"]),
+      );
+      if (direct.length > 0) return direct;
+      if (!modulePath.includes("/")) {
+        return first(findWithExtensions(index, path.posix.join(fromDir, modulePath), [".py"]));
+      }
+      return first(
+        findBySuffix(index, modulePath, fromFile, [".py"]),
+        findBySuffix(index, `${modulePath}/__init__`, fromFile, [".py"]),
+      );
+    }
+
+    case "go": {
+      for (const { modulePath, dir } of index.goModules) {
+        if (importPath !== modulePath && !importPath.startsWith(`${modulePath}/`)) continue;
+        const rest = importPath.slice(modulePath.length).replace(/^\//, "");
+        const pkgDir = path.posix.normalize(dir === "." ? rest || "." : rest ? `${dir}/${rest}` : dir);
+        return (index.byDir.get(pkgDir) ?? []).filter(p => p.endsWith(".go") && !p.endsWith("_test.go"));
+      }
+      return [];
+    }
+
+    case "rust": {
+      const segments = importPath.split("::").filter(Boolean);
+      const head = segments.shift();
+      let baseDir: string;
+      if (head === "crate") {
+        const fromSegments = fromDir.split("/");
+        const srcIndex = fromSegments.lastIndexOf("src");
+        baseDir = srcIndex >= 0 ? fromSegments.slice(0, srcIndex + 1).join("/") : fromDir;
+      } else if (head === "self" || head === "super") {
+        baseDir = head === "super" ? path.posix.dirname(fromDir) : fromDir;
+        while (segments[0] === "super") {
+          segments.shift();
+          baseDir = path.posix.dirname(baseDir);
+        }
+      } else {
+        return []; // external crate or std
+      }
+      // Trailing segments may be items rather than modules; try the longest module path first
+      for (let len = segments.length; len > 0; len--) {
+        const base = normalizeRepoRelative(path.posix.join(baseDir, ...segments.slice(0, len)));
+        if (!base) return [];
+        const hit = findWithExtensions(index, base, [".rs"]) ?? findWithExtensions(index, `${base}/mod`, [".rs"]);
+        if (hit) return [hit];
+      }
+      return [];
+    }
+
+    case "java":
+    case "kotlin": {
+      const exts = language === "java" ? [".java"] : [".kt"];
+      const segments = importPath.split(".");
+      if (segments[segments.length - 1] === "*") return [];
+      // `import static a.b.C.method` -> drop trailing lowercase member names
+      while (segments.length > 1 && /^[a-z_]/.test(segments[segments.length - 1]) && /^[A-Z]/.test(segments[segments.length - 2])) {
+        segments.pop();
+      }
+      return first(findBySuffix(index, segments.join("/"), fromFile, exts));
+    }
+
+    case "ruby": {
+      const relative = normalizeRepoRelative(path.posix.join(fromDir, importPath));
+      return first(
+        relative ? findWithExtensions(index, relative, [".rb"]) : undefined,
+        findWithExtensions(index, `lib/${importPath}`, [".rb"]),
+      );
+    }
+
+    case "php": {
+      if (importPath.includes("\\")) {
+        return first(findBySuffix(index, importPath.replace(/\\/g, "/"), fromFile, [".php"]));
+      }
+      const relative = normalizeRepoRelative(path.posix.join(fromDir, importPath));
+      return first(relative && index.paths.has(relative) ? relative : undefined);
+    }
+
+    case "c":
+    case "cpp": {
+      const relative = normalizeRepoRelative(path.posix.join(fromDir, importPath));
+      if (relative && index.paths.has(relative)) return [relative];
+      const suffix = normalizeRepoRelative(importPath);
+      if (!suffix) return [];
+      const ext = path.posix.extname(suffix);
+      return first(findBySuffix(index, stripExt(suffix), fromFile, ext ? [ext] : undefined));
+    }
+
+    default:
+      return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// File access
+// ---------------------------------------------------------------------------
+
+function isWithin(root: string, target: string): boolean {
+  const relative = path.relative(root, target);
+  return relative !== "" && relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+}
+
+/**
+ * Resolve a caller-supplied path inside the repo. Returns null for anything that
+ * escapes the repo root, including via `..`, absolute paths, or symlinks.
+ */
+export function resolveRepoPath(repoDir: string, filePath: string): string | null {
+  const root = path.resolve(repoDir);
+  const target = path.resolve(root, filePath);
+  if (!isWithin(root, target)) return null;
+
+  try {
+    const realRoot = fs.realpathSync(root);
+    const realTarget = fs.realpathSync(target);
+    return isWithin(realRoot, realTarget) ? realTarget : null;
+  } catch {
     return null;
   }
-
-  // Resolve relative import
-  const fromDir = path.dirname(fromFile);
-  let resolved = importPath.startsWith("@/")
-    ? importPath.replace("@/", "")
-    : path.normalize(path.join(fromDir, importPath));
-
-  // Clean up path
-  resolved = resolved.replace(/\\/g, "/");
-
-  // Try exact match, then with common extensions
-  if (fileMap.has(resolved)) return fileMap.get(resolved)!;
-
-  for (const ext of [".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs"]) {
-    if (fileMap.has(resolved + ext)) return fileMap.get(resolved + ext)!;
-  }
-
-  // Try /index
-  for (const ext of [".ts", ".tsx", ".js", ".jsx"]) {
-    if (fileMap.has(resolved + "/index" + ext)) return fileMap.get(resolved + "/index" + ext)!;
-  }
-
-  return null;
 }
 
 export function getFileContent(repoDir: string, filePath: string, maxLines: number = 200): string {
+  const fullPath = resolveRepoPath(repoDir, filePath);
+  if (!fullPath) return "";
+
   try {
-    const fullPath = path.join(repoDir, filePath);
     const content = fs.readFileSync(fullPath, "utf-8");
     const lines = content.split("\n");
     if (lines.length <= maxLines) return content;

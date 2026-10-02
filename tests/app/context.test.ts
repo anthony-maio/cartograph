@@ -37,3 +37,23 @@ test("hydrateContextFiles loads selected files that were not part of the initial
     fs.rmSync(repoDir, { recursive: true, force: true });
   }
 });
+
+test("hydrateContextFiles drops LLM-selected paths that escape the repo", () => {
+  const outer = fs.mkdtempSync(path.join(os.tmpdir(), "cartograph-context-escape-"));
+
+  try {
+    const repoDir = path.join(outer, "repo");
+    fs.mkdirSync(repoDir);
+    fs.writeFileSync(path.join(repoDir, "safe.ts"), "export const safe = true;\n", "utf-8");
+    fs.writeFileSync(path.join(outer, "secret.env"), "API_KEY=hunter2\n", "utf-8");
+
+    const files = hydrateContextFiles(repoDir, [
+      { path: "safe.ts", reason: "Legit" },
+      { path: "../secret.env", reason: "Injected by repo content" },
+    ], new Map());
+
+    assert.deepEqual(files.map((file) => file.path), ["safe.ts"]);
+  } finally {
+    fs.rmSync(outer, { recursive: true, force: true });
+  }
+});
