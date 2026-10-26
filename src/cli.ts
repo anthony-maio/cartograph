@@ -11,7 +11,7 @@ import { summarizeFiles, synthesizeWiki, selectContext } from "./pipeline";
 import { wikiToMarkdown, contextToMarkdown, staticToMarkdown, taskPacketToMarkdown } from "./markdown";
 import { createRunWorkspace, getCacheRoot, findRunDirectory, loadRunManifest } from "./app/cache";
 import { exportRunArtifact, writeRunArtifact } from "./app/artifacts";
-import { estimateContextTokens, hydrateContextFiles } from "./app/context";
+import { estimateContextTokens, hydrateContextFiles, selectStaticContextFiles } from "./app/context";
 import { handleInstallCommand } from "./app/commands/install";
 import { handleUninstallCommand } from "./app/commands/uninstall";
 import { handleDoctorCommand } from "./app/commands/doctor";
@@ -33,9 +33,9 @@ program
   .option("--json", "Output raw JSON instead of markdown")
   .option("--include-contents", "Embed top file contents in analyze output even for compact small-repo mode")
   .option("-c, --context <task>", "Context selection mode: describe the task to get only relevant files")
-  .option("-n, --top <number>", "Number of top files to include in static mode", "30")
+  .option("-n, --top <number>", "Maximum files to load for analysis or static task context", "30")
   .option("-m, --model <model>", "Override model for both fast and strong passes (e.g. qwen3:14b)")
-  .option("-s, --static", "Static analysis only — no LLM calls, no API key needed. Outputs scored files + contents.")
+  .option("-s, --static", "Use local analysis and task matching without LLM calls or an API key")
   .action((repo, opts) => {
     if (!repo) {
       program.outputHelp();
@@ -60,7 +60,7 @@ addAnalysisOptions(
 addAnalysisOptions(
   program
     .command("context <repo>")
-    .description("Select the minimal context needed for a specific development task.")
+    .description("Select context for a development task. Use --static for local task matching without an API key.")
     .requiredOption("-t, --task <task>", "Task description used for context selection"),
 ).action((repo, opts) => {
   return run(repo, {
@@ -126,9 +126,9 @@ function addAnalysisOptions<T extends Command>(command: T): T {
     .option("-o, --output <path>", "Output file path (default: stdout)")
     .option("--json", "Output raw JSON instead of markdown")
     .option("--include-contents", "Embed top file contents in analyze output even for compact small-repo mode")
-    .option("-n, --top <number>", "Number of top files to include in static mode", "30")
+    .option("-n, --top <number>", "Maximum files to load for analysis or static task context", "30")
     .option("-m, --model <model>", "Override model for both fast and strong passes (e.g. qwen3:14b)")
-    .option("-s, --static", "Static analysis only — no LLM calls, no API key needed. Outputs scored files + contents.");
+    .option("-s, --static", "Use local analysis and task matching without LLM calls or an API key");
 }
 
 function handleExportCommand(runId: string, opts: { artifact?: string; to: string }) {
@@ -169,8 +169,19 @@ async function run(repo: string, opts: {
   command?: "analyze" | "context" | "wiki";
   includeContents?: boolean;
 }) {
-  const topN = parseInt(opts.top || "30", 10);
+  const topN = Number(opts.top ?? "30");
   const spinner = ora();
+
+  if (!Number.isSafeInteger(topN) || topN < 1) {
+    console.error(chalk.red("Error: --top must be a positive integer."));
+    process.exitCode = 1;
+    return;
+  }
+  if (opts.context !== undefined && !opts.context.trim()) {
+    console.error(chalk.red("Error: Task description must not be empty."));
+    process.exitCode = 1;
+    return;
+  }
 
   // Validate LLM settings before cloning so a bad flag fails fast and leaves nothing behind
   let llmConfig: LLMConfig | undefined;
@@ -199,6 +210,25 @@ async function run(repo: string, opts: {
 
     // === Static-only mode: no LLM, no API key ===
     if (!llmConfig) {
+      if (opts.context) {
+        const selected = selectStaticContextFiles({
+          repoId, repoName, taskSummary: opts.context, files, edges,
+        }, topN);
+        const hydratedFiles = hydrateContextFiles(repoDir, selected, new Map());
+        const totalTokens = estimateContextTokens(hydratedFiles);
+        if (hydratedFiles.length === 0) {
+          spinner.warn("No files matched the task. Try naming a file, symbol, or module.");
+        } else {
+          spinner.succeed(`Selected ${hydratedFiles.length} files (~${totalTokens.toLocaleString()} tokens) using local task matching`);
+        }
+        const output = opts.json
+          ? JSON.stringify({ files: hydratedFiles, totalTokens }, null, 2)
+          : contextToMarkdown(opts.context, hydratedFiles, totalTokens);
+        writeOutput(output, opts.output);
+        cacheRunOutput(repoId, commandName, "task-context", opts.json ? "json" : "md", output);
+        return;
+      }
+
       // The content policy only decides what the analyze output embeds
       const contentPolicy = resolveAnalysisContentPolicy(files, opts.includeContents, opts.json ? "json" : "markdown");
       const fileContents = contentPolicy.includeContents ? loadFileContents(repoDir, topFiles) : new Map<string, string>();

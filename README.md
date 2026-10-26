@@ -12,7 +12,7 @@ The primary workflow is:
 
 1. `analyze` to map the repo
 2. `packet` to prepare the work
-3. `context` to load the minimum files
+3. `context --static` to load task-matched files without a model call
 
 `wiki`, host installs, and benchmarks are secondary surfaces built around that core path.
 
@@ -49,6 +49,21 @@ npm install -g .
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development workflow and [SECURITY.md](./SECURITY.md) for vulnerability reporting.
 
+## Run a complete example
+
+The npm package includes a small refresh-token example. From a new working directory:
+
+```sh
+npm init -y
+npm install @anthony-maio/cartograph@1.2.1
+npx cartograph analyze ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --static
+npx cartograph packet ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --type bug-fix --task "fix refresh token expiry"
+npx cartograph context ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --task "fix refresh token expiry" --static --json
+node --test ./node_modules/@anthony-maio/cartograph/examples/auth-refresh/tests/auth-refresh.test.js
+```
+
+The packet should point to `src/auth/refresh.js` and `tests/auth-refresh.test.js`. The context bundle includes the clock helper and leaves unrelated billing/catalog files out. The three behavioral checks should pass. [Walk through the investigation](docs/examples/auth-refresh.md) for expected results and how to apply the same process to your repository.
+
 ## Claude Code Plugin
 
 This repo also acts as a Claude Code plugin marketplace. The `cartograph` plugin bundles:
@@ -72,12 +87,14 @@ If you only remember one thing, remember this:
 ```bash
 cartograph analyze <repo> --static
 cartograph packet <repo> --type <type> --task "<task>"
-cartograph context <repo> --task "<task>" --json
+cartograph context <repo> --task "<task>" --static --json
 ```
 
 - `analyze` maps the repo and tells you what matters.
 - `packet` turns a concrete job into a reusable working artifact.
-- `context` gives the next agent the smallest useful file set.
+- `context --static` selects task-matched files and their nearby dependencies and tests, with their contents. It uses local heuristics and needs no API key.
+
+The separate model-backed context workflow runs when you omit `--static`; configure a provider before using it. Neither mode proves that a selected file contains the bug.
 
 ## Command Surface
 
@@ -110,7 +127,7 @@ cartograph analyze ./my-project --static
 cartograph packet ./my-project --type bug-fix --task "fix auth refresh bug" --changed src/auth/service.ts tests/auth/service.test.ts
 
 # Load the minimum file set for that job
-cartograph context ./my-project --task "add user authentication" --json
+cartograph context ./my-project --task "add user authentication" --static --json
 
 # Force embedded snippets when you really want them
 cartograph analyze ./my-project --static --json --include-contents

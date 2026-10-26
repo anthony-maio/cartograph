@@ -1,5 +1,5 @@
 import * as fs from "node:fs";
-import simpleGit from "simple-git";
+import { simpleGit } from "simple-git";
 import { cleanupRepo, cloneRepo } from "../analyzer";
 
 export interface CloneCacheDeps {

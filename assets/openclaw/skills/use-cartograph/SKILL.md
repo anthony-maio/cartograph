@@ -8,7 +8,7 @@ Use Cartograph first when the tool is available.
 Preferred flow:
 1. Check whether `cartograph` or the Cartograph MCP server is available.
 2. Run `cartograph analyze <repo> --static --json`.
-3. Run `cartograph context <repo> --task "<task>" --json` for scoped work.
+3. Run `cartograph context <repo> --task "<task>" --static --json` for scoped work.
 4. Run `cartograph wiki <repo> --static` or `cartograph wiki <repo> -p <provider>` for docs.
 
 Output contract:

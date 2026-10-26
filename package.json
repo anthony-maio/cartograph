@@ -1,6 +1,6 @@
 {
   "name": "@anthony-maio/cartograph",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "mcpName": "io.github.anthony-maio/cartograph",
   "description": "MCP server + CLI for intelligent codebase analysis. Scores files by importance, maps dependencies, provides targeted context for AI agents.",
   "type": "module",
@@ -28,8 +28,11 @@
   },
   "license": "MIT",
   "files": [
-    "dist",
+    "dist/cli.cjs",
+    "dist/mcp.cjs",
     "assets",
+    "examples/auth-refresh",
+    "docs/examples/auth-refresh.md",
     "README.md",
     "LICENSE",
     "CONTRIBUTING.md",
@@ -42,6 +45,7 @@
     "dev": "tsx src/cli.ts",
     "dev:mcp": "tsx src/mcp.ts",
     "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs --banner:js=\"#!/usr/bin/env node\" --external:simple-git --external:@google/genai --external:openai && esbuild src/mcp.ts --bundle --platform=node --format=cjs --outfile=dist/mcp.cjs --external:simple-git --external:@google/genai --external:openai --external:@modelcontextprotocol/sdk",
+    "prepack": "npm run build",
     "start": "node dist/cli.cjs",
     "start:mcp": "node dist/mcp.cjs",
     "check": "tsc",
@@ -55,13 +59,13 @@
   },
   "dependencies": {
     "@google/genai": "^1.50.0",
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "openai": "^6.34.0",
     "ora": "^8.1.0",
-    "simple-git": "^3.36.0",
-    "zod": "^3.24.2"
+    "simple-git": "^4.0.2",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "20.19.27",

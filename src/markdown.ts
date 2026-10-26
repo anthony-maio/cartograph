@@ -147,7 +147,7 @@ export function staticToMarkdown(
   lines.push("## Recommended Next Commands");
   lines.push("");
   lines.push("- `cartograph packet <repo> --type bug-fix --task \"...\"` to build a reusable task packet with likely edit points and validation targets.");
-  lines.push("- `cartograph context <repo> --task \"...\" --json` to load the minimum file set for the change you actually want to make.");
+  lines.push("- `cartograph context <repo> --task \"...\" --static --json` to load matching source, nearby dependencies, and tests without an API key.");
   if (!contentPolicy || !contentPolicy.includeContents) {
     lines.push("- `cartograph analyze <repo> --static --json --include-contents` if you want embedded snippets instead of the compact map.");
   } else {

@@ -92,7 +92,7 @@
 
 cartograph analyze ./my-project --static
 cartograph packet ./my-project --type bug-fix --task "fix auth"
-cartograph context ./my-project --task "add auth" --json
+cartograph context ./my-project --task "add auth" --static --json
 
 /plugin marketplace add anthony-maio/cartograph
 /plugin install cartograph@making-minds-tools
@@ -180,6 +180,8 @@ cartograph install mcp</code></pre>
           and only add host integrations where they help.
         </p>
 
+        <p class="section-intro">Want a concrete first run? <a href="examples/auth-refresh.html">Run the packaged refresh-token example</a>. Map the code, find its test, and inspect the selected context without an API key. Use Cartograph 1.2.1 or newer.</p>
+
         <div class="steps-grid" role="list">
           <article class="step-card" role="listitem">
             <div class="step-number">01</div>
@@ -229,7 +231,7 @@ cartograph analyze ./my-project --static --json --include-contents</code></pre>
               <p>Ask for the smallest file set that supports the task you actually want to do.</p>
               <div class="code-card">
                 <div class="code-title">task context</div>
-                <pre id="context-command" class="code-block"><code>cartograph context ./my-project --task "add user authentication" --json</code></pre>
+                <pre id="context-command" class="code-block"><code>cartograph context ./my-project --task "add user authentication" --static --json</code></pre>
                 <button class="copy-button" type="button" data-copy-target="context-command">Copy</button>
               </div>
             </div>
@@ -363,7 +365,7 @@ cartograph install mcp</code></pre>
 
           <article class="example-card">
             <div class="example-title">Task-scoped handoff</div>
-            <pre class="code-block"><code>cartograph context ./my-project --task "trace the auth flow" --json</code></pre>
+            <pre class="code-block"><code>cartograph context ./my-project --task "trace the auth flow" --static --json</code></pre>
             <p>Use this when the next agent needs the smallest useful file set for a specific change.</p>
           </article>
 

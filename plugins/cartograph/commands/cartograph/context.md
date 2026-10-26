@@ -15,7 +15,7 @@ Treat the arguments as the task description. If no task is given, ask for one.
 
 ## Instructions
 
-1. Prefer `npx -y @anthony-maio/cartograph context . --task "$ARGUMENTS" --json` when Bash is available.
+1. Prefer `npx -y @anthony-maio/cartograph context . --task "$ARGUMENTS" --static --json` when Bash is available.
 2. If the CLI path is unavailable, use the bundled Cartograph MCP server plus targeted reads to reconstruct the same output contract.
 3. Return:
    - key files

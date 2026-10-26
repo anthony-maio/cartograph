@@ -11,5 +11,5 @@ Required output contract:
 Workflow:
 1. Run `cartograph analyze <repo> --static --json` and keep the cached run reference.
 2. Derive the key modules, entry points, and dependency hubs from that analysis.
-3. Run `cartograph context <repo> --task "<doc objective>" --json` for any section that needs a tighter file set.
+3. Run `cartograph context <repo> --task "<doc objective>" --static --json` for any section that needs a tighter file set.
 4. Draft the final documentation from the artifacts, not from broad manual repo reads.

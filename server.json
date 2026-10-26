@@ -7,12 +7,18 @@
     "url": "https://github.com/anthony-maio/cartograph",
     "source": "github"
   },
-  "version": "1.2.0",
+  "version": "1.2.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@anthony-maio/cartograph",
-      "version": "1.2.0",
+      "version": "1.2.1",
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ],
       "transport": {
         "type": "stdio"
       }

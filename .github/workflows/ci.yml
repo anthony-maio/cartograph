@@ -11,10 +11,13 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
         node-version:
           - 20
           - 22
@@ -38,8 +41,8 @@ jobs:
       - name: Type check
         run: npm run check
 
+      - name: Pack unbuilt sources and test the installed example
+        run: npm run pack:smoke
+
       - name: Build
         run: npm run build
-
-      - name: Tarball smoke test
-        run: npm run pack:smoke

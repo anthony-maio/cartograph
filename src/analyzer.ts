@@ -1,4 +1,4 @@
-import simpleGit from "simple-git";
+import { simpleGit } from "simple-git";
 import { execFileSync } from "child_process";
 import * as fs from "fs";
 import * as os from "os";

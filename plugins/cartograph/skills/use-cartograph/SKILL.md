@@ -10,7 +10,7 @@ Preferred flow:
 2. Use `analyze_repo` to rank files, map dependencies, and identify likely entry points.
 3. Use `get_file_contents` only for the small set of files that need deeper inspection.
 4. When the task needs the full CLI surface and Bash is available, run:
-   - `npx -y @anthony-maio/cartograph context <repo> --task "<task>" --json`
+   - `npx -y @anthony-maio/cartograph context <repo> --task "<task>" --static --json`
    - `npx -y @anthony-maio/cartograph wiki <repo> --static`
 
 Output contract:

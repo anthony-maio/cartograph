@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find a refresh-token bug | Cartograph</title>
+  <meta name="description" content="Run Cartograph's packaged example without an API key. Find the implementation, its test, and a focused context bundle.">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .walkthrough h1 { max-width: 900px; font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.12; }
+    .walkthrough h2 { margin-top: 2.5rem; font: 700 clamp(1.35rem, 2.5vw, 1.8rem)/1.3 "Manrope", sans-serif; }
+    .walkthrough p { max-width: 800px; }
+    .walkthrough pre { overflow-x: auto; }
+    .walkthrough pre code { padding: 0; background: none; color: inherit; }
+    .walkthrough p a { color: var(--accent-strong); text-decoration: underline; text-underline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <nav class="site-nav" aria-label="Main navigation"><div class="container-wide nav-inner"><a class="brand" href="../index.html">Cartograph</a><a href="index.html">All examples</a></div></nav>
+  <main id="main-content">
+    <section class="section walkthrough">
+      <div class="container">
+        <div class="section-label">A complete first run / No API key</div>
+        <h1>Find the code. Find the test. Check the behavior.</h1>
+        <p class="section-intro">Investigate a refresh-token expiry boundary in a small example included in the npm package. You will map the repo, build a task packet, and load the relevant code without including unrelated billing and catalog files.</p>
+        <h2>1. Install in a new working directory</h2>
+        <p>Requires Node.js 20 or newer. The sample uses only Node's built-in test runner.</p>
+        <div class="code-card"><pre class="code-block"><code>npm init -y
+npm install @anthony-maio/cartograph@1.2.1
+npx cartograph --version</code></pre></div>
+        <h2>2. Follow one task through the codebase</h2>
+        <div class="code-card"><pre class="code-block"><code>npx cartograph analyze ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --static
+npx cartograph packet ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --type bug-fix --task "fix refresh token expiry"
+npx cartograph context ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --task "fix refresh token expiry" --static --json</code></pre></div>
+        <p>Look for <code>src/auth/refresh.js</code> in the packet's <code>keyFiles</code> and <code>tests/auth-refresh.test.js</code> in <code>validationTargets</code>. The context bundle includes these files and their clock helper. The unrelated billing and catalog files should be absent.</p>
+        <h2>3. Run the checks</h2>
+        <div class="code-card"><pre class="code-block"><code>node --test ./node_modules/@anthony-maio/cartograph/examples/auth-refresh/tests/auth-refresh.test.js</code></pre></div>
+        <p>Expected result: three passing tests. The sample implementation converts a millisecond clock to Unix seconds, rejects a token exactly at expiry, and rejects revoked sessions. The example is already correct; its tests describe the behavior you would preserve while investigating a bug.</p>
+        <h2>What this establishes</h2>
+        <p>The installed package can locate an implementation and its test, return a focused context bundle, and leave unrelated code out. Cartograph uses local heuristics here. It does not prove that the selected file contains a bug or run the tests on your behalf.</p>
+        <p>Use the same commands with your repository path and a concrete task. Omit <code>--static</code> only when you want the separate model-backed context workflow and have configured a provider.</p>
+        <p><a href="https://github.com/anthony-maio/cartograph/tree/main/examples/auth-refresh">Inspect the sample source</a> | <a href="https://github.com/anthony-maio/cartograph/blob/main/docs/examples/auth-refresh.md">Full walkthrough</a> | <a href="../index.html#quickstart">Back to setup</a></p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

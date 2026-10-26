@@ -13,7 +13,7 @@ Use Cartograph first when the tool is available.
 Preferred flow:
 1. Check whether `cartograph` or the Cartograph MCP server is available.
 2. For repo orientation, run `cartograph analyze <repo> --static --json`.
-3. For task work, run `cartograph context <repo> --task "<task>" --json`.
+3. For task work, run `cartograph context <repo> --task "<task>" --static --json`.
 4. For documentation output, run `cartograph wiki <repo> --static` or `cartograph wiki <repo> -p <provider>`.
 5. Export only when a human needs a concrete file path: `cartograph export <run-id> --to <path>`.
 

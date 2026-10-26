@@ -124,6 +124,16 @@ const LOW_SIGNAL_PATH_SEGMENTS = new Set([
 
 const ENTRY_POINT_PATTERNS = [/^index\./, /^main\./, /^app\./, /^server\./, /^cli\./, /^mod\./];
 
+export function findTaskMatchingPaths(files: FileNode[], taskSummary: string): Set<string> {
+  const tokens = extractTaskTokens(taskSummary);
+  const informativeTokens = tokens.filter((token) => !LOW_SIGNAL_TOKENS.has(token));
+  const terms = informativeTokens.length > 0 ? informativeTokens : tokens;
+  return new Set(files.filter((file) => {
+    const haystack = `${normalizePath(file.path)} ${file.exports.join(" ")} ${file.imports.join(" ")}`.toLowerCase();
+    return terms.some((token) => matchesToken(haystack, token));
+  }).map((file) => file.path));
+}
+
 export function buildTaskPacket(opts: BuildTaskPacketOptions): TaskPacket {
   const changedFiles = new Set((opts.changedFiles ?? []).map(normalizePath));
   const files = hydrateChangedFiles(opts.files, changedFiles);
