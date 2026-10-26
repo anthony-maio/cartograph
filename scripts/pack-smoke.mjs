@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { parseNpmPackResult } from "./npm-pack-result.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf-8"));
@@ -125,8 +126,11 @@ try {
   fs.symlinkSync(path.join(repoRoot, "node_modules"), path.join(stageRoot, "node_modules"), "junction");
   assert.ok(!fs.existsSync(path.join(stageRoot, "dist")), "staged package must start without dist");
 
-  const [packed] = JSON.parse(runNpm(["pack", "--json", "--pack-destination", tempRoot], stageRoot));
-  assert.equal(typeof packed?.filename, "string", "npm pack should return a tarball filename");
+  const packed = parseNpmPackResult(
+    runNpm(["pack", "--json", "--pack-destination", tempRoot], stageRoot),
+    packageJson.name,
+    packageJson.version,
+  );
   assert.equal(path.basename(packed.filename), packed.filename, "tarball filename must stay in the temp directory");
   const packedPaths = packed.files.map((file) => file.path);
   for (const file of [

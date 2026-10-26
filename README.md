@@ -55,7 +55,7 @@ The npm package includes a small refresh-token example. From a new working direc
 
 ```sh
 npm init -y
-npm install @anthony-maio/cartograph@1.2.1
+npm install @anthony-maio/cartograph@1.2.2
 npx cartograph analyze ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --static
 npx cartograph packet ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --type bug-fix --task "fix refresh token expiry"
 npx cartograph context ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --task "fix refresh token expiry" --static --json

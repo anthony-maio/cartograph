@@ -26,6 +26,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Wait for the documented package version
+        shell: bash
+        run: |
+          NAME="$(node -p "encodeURIComponent(require('./package.json').name)")"
+          VERSION="$(node -p "require('./package.json').version")"
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --output /dev/null "https://registry.npmjs.org/${NAME}/${VERSION}"; then
+              echo "Package ${VERSION} is available; deploying its documentation"
+              exit 0
+            fi
+            echo "Waiting for package ${VERSION} before updating the quickstart (${attempt}/30)"
+            sleep 20
+          done
+          echo "::error::Package ${VERSION} is not published; keeping the existing site"
+          exit 1
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
