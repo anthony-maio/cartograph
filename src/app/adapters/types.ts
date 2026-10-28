@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-export type AdapterId = "claude" | "openclaw" | "mcp";
+export type AdapterId = "claude" | "openclaw" | "mcp" | "hermes";
 
 export interface AdapterContext {
   env?: NodeJS.ProcessEnv;
@@ -34,6 +34,7 @@ export interface AdapterStatus {
   targetRoot: string;
   installed: boolean;
   assets: AdapterStatusAsset[];
+  issues?: string[];
 }
 
 export interface AdapterManifest {

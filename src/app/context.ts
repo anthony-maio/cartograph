@@ -1,5 +1,5 @@
 import { getFileContent } from "../analyzer";
-import { buildTaskPacket, findTaskMatchingPaths, type BuildTaskPacketOptions } from "./task-packets";
+import { buildTaskPacket, extractTaskTokens, findTaskAnchorPaths, findTaskMatchingPaths, matchesToken, type BuildTaskPacketOptions } from "./task-packets";
 
 export interface SelectedContextFile {
   path: string;
@@ -11,6 +11,9 @@ export interface HydratedContextFile {
   path: string;
   reason: string;
   content: string;
+  startLine?: number;
+  endLine?: number;
+  truncated?: boolean;
 }
 
 export function selectStaticContextFiles(
@@ -25,11 +28,15 @@ export function selectStaticContextFiles(
     if (matches.has(edge.to)) relevantPaths.add(edge.from);
   }
 
-  // Keep the packet's ranking and tests, then add immediate dependencies that
-  // did not fit its small minimal-context list. Never pad with unrelated files.
+  // Keep named source surfaces ahead of hub scores, then include validation and
+  // supporting files. Never pad the result with unrelated files.
   const candidates: SelectedContextFile[] = [
-    ...packet.minimalContext,
+    ...findTaskAnchorPaths(opts.files, opts.taskSummary).map((filePath) => ({
+      path: filePath,
+      reason: "Filename or exported symbol matches task terms",
+    })),
     ...packet.validationTargets,
+    ...packet.minimalContext,
     ...packet.keyFiles,
     ...opts.files.map((file) => ({
       path: file.path,
@@ -52,10 +59,21 @@ export function hydrateContextFiles(
   files: SelectedContextFile[],
   fileContents: Map<string, string>,
   maxLines: number = 200,
+  taskSummary?: string,
 ): HydratedContextFile[] {
   const hydrated: HydratedContextFile[] = [];
 
   for (const file of files) {
+    if (taskSummary !== undefined) {
+      // Static selection needs the actual source to find matches below the
+      // initial preview. The model-backed branch keeps its existing cache path.
+      const source = getFileContent(repoDir, file.path, Number.MAX_SAFE_INTEGER);
+      if (!source.trim()) continue;
+      const excerpt = selectTaskExcerpt(source, taskSummary, Math.min(maxLines, 80));
+      fileContents.set(file.path, excerpt.content);
+      hydrated.push({ path: file.path, reason: file.reason, ...excerpt });
+      continue;
+    }
     const cachedContent = file.content?.trim()
       ? file.content
       : fileContents.get(file.path) || getFileContent(repoDir, file.path, maxLines);
@@ -73,6 +91,31 @@ export function hydrateContextFiles(
   }
 
   return hydrated;
+}
+
+function selectTaskExcerpt(source: string, taskSummary: string, maxLines: number) {
+  const lines = source.split("\n");
+  const tokens = extractTaskTokens(taskSummary);
+  let bestLine = 0;
+  let bestScore = 0;
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index].toLowerCase();
+    const score = tokens.filter((token) => matchesToken(line, token)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      bestLine = index;
+    }
+  }
+  const end = Math.min(lines.length, Math.max(0, bestLine - Math.floor(maxLines / 2)) + maxLines);
+  const start = Math.max(0, end - maxLines);
+  let content = lines.slice(start, end).join("\n");
+  if (end < lines.length && content.endsWith("\r")) content = content.slice(0, -1);
+  return {
+    content,
+    startLine: start + 1,
+    endLine: end,
+    truncated: start > 0 || end < lines.length,
+  };
 }
 
 export function estimateContextTokens(files: Array<{ content: string }>): number {

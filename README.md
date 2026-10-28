@@ -1,6 +1,6 @@
 # Cartograph
 
-Cartograph is task-shaped repo context for coding agents. It ships a CLI, an MCP server, user-scope install adapters for Claude Code and OpenClaw, and packaged agent assets for documentation-heavy workflows.
+Cartograph provides task-focused repository context for coding agents. It ships a CLI, an MCP server, install adapters for Claude Code, OpenClaw, and Hermes, and agent assets for documentation workflows.
 
 - npm: [`@anthony-maio/cartograph`](https://www.npmjs.com/package/@anthony-maio/cartograph)
 - MCP Registry: [`io.github.anthony-maio/cartograph`](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.anthony-maio/cartograph)
@@ -64,6 +64,22 @@ node --test ./node_modules/@anthony-maio/cartograph/examples/auth-refresh/tests/
 
 The packet should point to `src/auth/refresh.js` and `tests/auth-refresh.test.js`. The context bundle includes the clock helper and leaves unrelated billing/catalog files out. The three behavioral checks should pass. [Walk through the investigation](docs/examples/auth-refresh.md) for expected results and how to apply the same process to your repository.
 
+## Hermes plugin
+
+The native Hermes plugin exposes `cartograph_analyze` for repository orientation and `cartograph_context` for task-focused source excerpts. Both run locally in static mode without a model API call. Install from this source checkout until a new npm release includes the adapter:
+
+```sh
+npm ci
+npm run build
+node dist/cli.cjs install hermes
+hermes plugins enable cartograph
+node dist/cli.cjs doctor hermes
+```
+
+Run these commands in the same OS environment as Hermes. For Hermes in WSL, use WSL Node and repository paths such as `/mnt/d/Development/cartograph`. Restart an existing Hermes session to load the tools. The installer binds the plugin to this checkout's CLI; keep the checkout in place, or reinstall after moving it.
+
+See the [Hermes setup and real-repository example](docs/examples/hermes.md) for profile settings, verification, and removal. The plugin caches source excerpts under the selected Hermes profile and supports an optional repository allowlist. Static matching can miss relevant code, so check the returned source before editing.
+
 ## Claude Code Plugin
 
 This repo also acts as a Claude Code plugin marketplace. The `cartograph` plugin bundles:
@@ -104,8 +120,8 @@ cartograph packet <repo> --type <type> --task "<task>" [--changed <paths...>]
 cartograph context <repo> --task "<task>" [options]
 cartograph wiki <repo> [options]
 cartograph export <run-id> --to <path> [--artifact <name>]
-cartograph install <claude|openclaw|mcp>
-cartograph uninstall <claude|openclaw|mcp>
+cartograph install <claude|openclaw|mcp|hermes>
+cartograph uninstall <claude|openclaw|mcp|hermes>
 cartograph doctor [target] [--json]
 cartograph mcp
 ```
@@ -166,14 +182,13 @@ Each run gets a manifest plus named artifacts, which keeps agent handoffs lightw
 
 ## Host Installs
 
-Cartograph uses an explicit hybrid install model. Installing the package does not modify Claude Code, OpenClaw, or MCP host configs automatically.
-
-Instead, install only the integration you want:
+Installing the package does not modify host configuration. Use the host-specific installer to copy its assets, then enable the integration in that host.
 
 ```bash
 cartograph install claude
 cartograph install openclaw
 cartograph install mcp
+cartograph install hermes
 ```
 
 What each target installs:
@@ -181,6 +196,7 @@ What each target installs:
 - `claude`: user-scope skills plus the bundled documentation agents under `~/.claude`
 - `openclaw`: user-scope skill pack under `~/.openclaw`
 - `mcp`: a Cartograph MCP config snippet under `~/.cartograph/mcp`
+- `hermes`: a native tool plugin and local runtime binding under the selected Hermes profile; enable it with `hermes plugins enable cartograph`
 
 Check status at any time:
 
@@ -194,6 +210,7 @@ cartograph doctor --json
 - CLI: best default path when you want deterministic local analysis and explicit artifacts.
 - Claude Code plugin: best when you want plugin install, bundled skills, slash commands, and a plugin-scoped MCP server.
 - OpenClaw skills: best when you want the same Cartograph workflow inside an OpenClaw skill-first environment.
+- Hermes plugin: native repository orientation and source-context tools backed by the local CLI.
 - MCP Registry: best when your host already prefers tool wiring over shell commands.
 
 ## MCP Server

@@ -20,6 +20,7 @@ test("doctor reports installed and missing adapter assets", async () => {
     CARTOGRAPH_CLAUDE_HOME: path.join(tempRoot, ".claude"),
     CARTOGRAPH_OPENCLAW_HOME: path.join(tempRoot, ".openclaw"),
     CARTOGRAPH_MCP_HOME: path.join(tempRoot, ".cartograph", "mcp"),
+    CARTOGRAPH_HERMES_HOME: path.join(tempRoot, ".hermes"),
   };
 
   try {
@@ -27,7 +28,7 @@ test("doctor reports installed and missing adapter assets", async () => {
     assert.equal(before.code, 0, before.stderr);
 
     const initial = JSON.parse(before.stdout) as DoctorResult;
-    assert.equal(initial.adapters.length, 3);
+    assert.deepEqual(initial.adapters.map((adapter) => adapter.id).sort(), ["claude", "hermes", "mcp", "openclaw"]);
     assert.ok(initial.adapters.every((adapter) => adapter.installed === false));
 
     const install = await runCli(["install", "claude"], env);

@@ -214,7 +214,7 @@ async function run(repo: string, opts: {
         const selected = selectStaticContextFiles({
           repoId, repoName, taskSummary: opts.context, files, edges,
         }, topN);
-        const hydratedFiles = hydrateContextFiles(repoDir, selected, new Map());
+        const hydratedFiles = hydrateContextFiles(repoDir, selected, new Map(), 200, opts.context);
         const totalTokens = estimateContextTokens(hydratedFiles);
         if (hydratedFiles.length === 0) {
           spinner.warn("No files matched the task. Try naming a file, symbol, or module.");

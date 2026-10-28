@@ -46,6 +46,14 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Setup Python for the Hermes plugin contracts
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check Hermes plugin contracts
+        run: python -m unittest discover -s tests/hermes -v
+
       - name: Type check
         run: npm run check
 

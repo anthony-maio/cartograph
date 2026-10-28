@@ -283,7 +283,6 @@ export function analyzeFiles(repoDir: string): { files: FileNode[]; edges: Depen
 
   // First pass: analyze each file
   for (const filePath of filePaths) {
-    const fullPath = path.join(repoDir, filePath);
     const ext = path.extname(filePath).toLowerCase();
     const language = LANG_MAP[ext];
 
@@ -292,6 +291,9 @@ export function analyzeFiles(repoDir: string): { files: FileNode[]; edges: Depen
     const isConfig = CONFIG_PATTERNS.some(p => p.test(basename));
 
     if (!language && !isConfig) continue;
+
+    const fullPath = resolveRepoPath(repoDir, filePath);
+    if (!fullPath) continue;
 
     try {
       const stat = fs.statSync(fullPath);

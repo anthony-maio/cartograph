@@ -18,6 +18,7 @@ export function handleDoctorCommand(target: string | undefined, opts: { json?: b
     for (const asset of adapter.assets) {
       console.log(`- ${asset.label}: ${asset.exists ? "ok" : "missing"} -> ${asset.path}`);
     }
+    for (const issue of adapter.issues ?? []) console.log(`- ${issue}`);
   }
 }
 

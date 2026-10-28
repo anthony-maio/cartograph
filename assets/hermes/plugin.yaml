@@ -1,0 +1,8 @@
+name: cartograph
+version: 0.1.0
+description: Local repository maps and task-focused source context from Cartograph.
+kind: standalone
+python_runtime: external
+provides_tools:
+  - cartograph_analyze
+  - cartograph_context

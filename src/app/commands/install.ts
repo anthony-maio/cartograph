@@ -15,4 +15,8 @@ export function handleInstallCommand(target?: string) {
   const adapter = getAdapter(target);
   const result = adapter.install();
   console.log(`Installed ${adapter.label} assets to ${result.targetRoot}`);
+  if (target === "hermes") {
+    console.log(`With HERMES_HOME set to ${result.targetRoot}, run: hermes plugins enable cartograph`);
+    console.log("Restart Hermes after enabling the plugin.");
+  }
 }

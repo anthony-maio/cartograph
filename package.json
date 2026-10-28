@@ -33,6 +33,7 @@
     "assets",
     "examples/auth-refresh",
     "docs/examples/auth-refresh.md",
+    "docs/examples/hermes.md",
     "README.md",
     "LICENSE",
     "CONTRIBUTING.md",

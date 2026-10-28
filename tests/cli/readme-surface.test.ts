@@ -20,7 +20,7 @@ test("README and CLI help describe the packaged command surface", async () => {
     "cartograph context <repo> --task",
     "cartograph wiki <repo>",
     "cartograph export <run-id> --to <path>",
-    "cartograph install <claude|openclaw|mcp>",
+    "cartograph install <claude|openclaw|mcp|hermes>",
     "cartograph doctor [target] [--json]",
     "CARTOGRAPH_API_KEY",
     "use-cartograph",

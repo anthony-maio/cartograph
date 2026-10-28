@@ -1,12 +1,14 @@
 import { claudeAdapter } from "./claude";
 import { mcpAdapter } from "./mcp";
 import { openclawAdapter } from "./openclaw";
+import { hermesAdapter } from "./hermes";
 import type { AdapterId, AdapterManifest } from "./types";
 
 const registry = new Map<AdapterId, AdapterManifest>([
   ["claude", claudeAdapter],
   ["openclaw", openclawAdapter],
   ["mcp", mcpAdapter],
+  ["hermes", hermesAdapter],
 ]);
 
 export function listAdapters(): AdapterManifest[] {

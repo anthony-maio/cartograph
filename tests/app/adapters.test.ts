@@ -11,7 +11,7 @@ test("adapter registry exposes the supported adapters and user-scope install roo
   try {
     assert.deepEqual(
       listAdapters().map((adapter) => adapter.id),
-      ["claude", "openclaw", "mcp"],
+      ["claude", "openclaw", "mcp", "hermes"],
     );
 
     const claude = getAdapter("claude");

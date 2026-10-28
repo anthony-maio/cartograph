@@ -134,6 +134,26 @@ export function findTaskMatchingPaths(files: FileNode[], taskSummary: string): S
   }).map((file) => file.path));
 }
 
+// Explicit filenames and exported symbols identify an edit surface more directly
+// than a high fan-in count or an import of the same module.
+export function findTaskAnchorPaths(files: FileNode[], taskSummary: string): string[] {
+  const tokens = extractTaskTokens(taskSummary);
+  return files.filter((file) => !isTestFile(file.path) && !isDocumentationLike(file.path) && !isDocsOrExamplePath(file.path)).map((file) => {
+    const stem = fileStem(file.path).toLowerCase();
+    const symbols = file.exports.join(" ").toLowerCase();
+    return {
+      file,
+      filenameMatches: tokens.filter((token) => matchesToken(stem, token)).length,
+      symbolMatches: tokens.filter((token) => matchesToken(symbols, token)).length,
+    };
+  }).filter((candidate) => candidate.filenameMatches + candidate.symbolMatches > 0)
+    .sort((a, b) => b.filenameMatches - a.filenameMatches
+      || b.symbolMatches - a.symbolMatches
+      || b.file.importanceScore - a.file.importanceScore
+      || a.file.path.localeCompare(b.file.path))
+    .map((candidate) => candidate.file.path);
+}
+
 export function buildTaskPacket(opts: BuildTaskPacketOptions): TaskPacket {
   const changedFiles = new Set((opts.changedFiles ?? []).map(normalizePath));
   const files = hydrateChangedFiles(opts.files, changedFiles);
@@ -853,7 +873,7 @@ function describeHubRole(stats: HubStats): string {
   return "connector";
 }
 
-function extractTaskTokens(summary: string): string[] {
+export function extractTaskTokens(summary: string): string[] {
   const tokens = summary
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, " ")
@@ -979,7 +999,7 @@ function tokenizePath(filePath: string): string[] {
     .filter((segment) => segment.length >= 3 && !LOW_SIGNAL_PATH_SEGMENTS.has(segment));
 }
 
-function matchesToken(haystack: string, token: string): boolean {
+export function matchesToken(haystack: string, token: string): boolean {
   if (haystack.includes(token)) {
     return true;
   }

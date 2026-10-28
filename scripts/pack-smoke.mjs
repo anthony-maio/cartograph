@@ -136,12 +136,14 @@ try {
   for (const file of [
     "dist/cli.cjs", "dist/mcp.cjs", "assets/mcp/cartograph-mcp.json",
     "assets/claude/skills/use-cartograph/SKILL.md",
+    "assets/hermes/plugin.yaml", "assets/hermes/__init__.py",
     "docs/examples/auth-refresh.md",
     ...relevantPaths.map((file) => `examples/auth-refresh/${file}`),
   ]) {
     assert.ok(packedPaths.includes(file), `tarball should contain ${file}`);
   }
   assert.ok(!packedPaths.some((file) => /^(src|tests|node_modules)\//.test(file)), "tarball should omit development files");
+  assert.ok(!packedPaths.some((file) => /(^|\/)__pycache__(\/|$)|\.pyc$/.test(file)), "tarball should omit Python bytecode and cache directories");
 
   fs.writeFileSync(path.join(installRoot, "package.json"), JSON.stringify({ name: "cartograph-smoke-consumer", private: true }));
   runNpm(["install", path.join(tempRoot, packed.filename), "--ignore-scripts", "--omit=dev", "--no-audit", "--no-fund"]);
@@ -153,7 +155,7 @@ try {
   const exampleRoot = path.join(installedRoot, "examples", "auth-refresh");
   const cliJson = (args) => JSON.parse(run(process.execPath, [installedCli, ...args]));
 
-  for (const adapter of ["claude", "openclaw", "mcp"]) {
+  for (const adapter of ["claude", "openclaw", "mcp", "hermes"]) {
     const initial = cliJson(["doctor", adapter, "--json"]).adapters[0];
     assert.equal(initial.installed, false);
     assertInHome(initial.targetRoot);
@@ -167,6 +169,12 @@ try {
     assert.equal(installed.installed, true, `${adapter} assets should load from the installed package`);
     assert.ok(installed.assets.every((asset) => asset.exists));
     for (const asset of installed.assets) assertInHome(fs.realpathSync(asset.path));
+    if (adapter === "hermes") {
+      const runtime = JSON.parse(fs.readFileSync(path.join(installed.targetRoot, "plugins", "cartograph", "runtime.json"), "utf8"));
+      assert.equal(runtime.node, process.execPath);
+      assert.equal(runtime.cli, installedCli);
+      assert.equal(runtime.cache_dir, path.join(installed.targetRoot, "cache", "cartograph"));
+    }
 
     run(process.execPath, [installedCli, "uninstall", adapter]);
     const removed = cliJson(["doctor", adapter, "--json"]).adapters[0];
@@ -202,7 +210,7 @@ try {
   console.log(`Packed ${packageJson.name}@${packageJson.version} from unbuilt sources.`);
   console.log(`Static context: ${contextPaths.join(", ")} (~${context.totalTokens} tokens).`);
   console.log("MCP tools: analyze_repo, build_task_packet, get_file_contents; registry and direct bundle passed.");
-  console.log("Installed CLI, three host adapters, static analysis, task packet, source context, and example tests passed.");
+  console.log("Installed CLI, four host adapters, static analysis, task packet, source context, and example tests passed.");
 } finally {
   // Remove the junction first so recursive cleanup cannot enter the checkout.
   const dependencyLink = path.join(stageRoot, "node_modules");
