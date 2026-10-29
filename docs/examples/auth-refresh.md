@@ -8,7 +8,7 @@ Use Node.js 20 or newer. Run these commands in a new working directory:
 
 ```sh
 npm init -y
-npm install @anthony-maio/cartograph@1.2.2
+npm install @anthony-maio/cartograph@1.3.0
 npx cartograph --version
 ```
 

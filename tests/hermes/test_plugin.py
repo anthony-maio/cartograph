@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -48,6 +49,26 @@ class CompletedChild:
 
 
 class PluginTests(unittest.TestCase):
+    def test_catalog_runtime_uses_settings_and_profile_cache_without_runtime_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            home = Path(folder).resolve()
+            cli = home / "cli.cjs"
+            cli.write_text("// fixture", encoding="utf-8")
+            location = home / "plugins" / "cartograph" / "__init__.py"
+            ctx = Context(node_path=sys.executable, cli_path=str(cli))
+            ctx.state = SimpleNamespace(data_dir=home / "plugin-data" / "cartograph")
+            with patch.object(plugin, "__file__", str(location)):
+                self.assertEqual(plugin._configured_runtime(ctx), {
+                    "node": sys.executable, "cli": str(cli),
+                    "cache_dir": str(home / "plugin-data" / "cartograph" / "cache"),
+                })
+
+    def test_catalog_runtime_rejects_partial_relative_and_missing_configuration(self):
+        for settings in ({"node_path": sys.executable}, {"node_path": "node", "cli_path": "cli.cjs"},
+                         {"node_path": sys.executable, "cli_path": str(Path.cwd() / "missing-cli.cjs")}):
+            with self.subTest(settings=settings), self.assertRaises(plugin.PluginError):
+                plugin._configured_runtime(Context(**settings))
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

@@ -50,6 +50,17 @@ def _runtime():
         ) from exc
 
 
+def _configured_runtime(ctx):
+    node = ctx.get_config("node_path", None)
+    cli = ctx.get_config("cli_path", None)
+    if node is None and cli is None:
+        return _runtime()
+    for name, value in (("node_path", node), ("cli_path", cli)):
+        if not isinstance(value, str) or not Path(value).is_absolute() or not Path(value).is_file():
+            raise PluginError("runtime_unavailable", f"Set {name} to an existing absolute file path in this Hermes profile's plugin settings.")
+    return {"node": node, "cli": cli, "cache_dir": str(Path(ctx.state.data_dir) / "cache")}
+
+
 def _repo(value, allowed_roots):
     if not isinstance(value, str) or not value.strip() or len(value) > 4096:
         raise PluginError("invalid_arguments", "repo must be an absolute local directory path.")
@@ -244,7 +255,7 @@ def _handle(ctx, command, args):
         repo = _repo(args.get("repo"), ctx.get_config("allowed_roots", None))
         timeout = _integer(ctx.get_config("timeout_seconds", 120), "timeout_seconds", 5, 300)
         limit = _integer(ctx.get_config("max_output_chars", 40000), "max_output_chars", 4000, 100000)
-        data = _run(_runtime(), repo, command, top, task, timeout)
+        data = _run(_configured_runtime(ctx), repo, command, top, task, timeout)
         return json.dumps(_summarize(data, command, top, limit), ensure_ascii=False)
     except PluginError as exc:
         return json.dumps({"error": str(exc), "code": exc.code})

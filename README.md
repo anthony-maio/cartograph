@@ -55,7 +55,7 @@ The npm package includes a small refresh-token example. From a new working direc
 
 ```sh
 npm init -y
-npm install @anthony-maio/cartograph@1.2.2
+npm install @anthony-maio/cartograph@1.3.0
 npx cartograph analyze ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --static
 npx cartograph packet ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --type bug-fix --task "fix refresh token expiry"
 npx cartograph context ./node_modules/@anthony-maio/cartograph/examples/auth-refresh --task "fix refresh token expiry" --static --json
@@ -66,19 +66,21 @@ The packet should point to `src/auth/refresh.js` and `tests/auth-refresh.test.js
 
 ## Hermes plugin
 
-The native Hermes plugin exposes `cartograph_analyze` for repository orientation and `cartograph_context` for task-focused source excerpts. Both run locally in static mode without a model API call. Install from this source checkout until a new npm release includes the adapter:
+The native Hermes plugin exposes `cartograph_analyze` for repository orientation and `cartograph_context` for task-focused source excerpts. Both run locally in static mode without a model API call. Install the npm package and its included adapter:
 
 ```sh
-npm ci
-npm run build
-node dist/cli.cjs install hermes
+npm install -g @anthony-maio/cartograph@1.3.0
+cartograph install hermes
 hermes plugins enable cartograph
-node dist/cli.cjs doctor hermes
+cartograph doctor hermes
 ```
 
-Run these commands in the same OS environment as Hermes. For Hermes in WSL, use WSL Node and repository paths such as `/mnt/d/Development/cartograph`. Restart an existing Hermes session to load the tools. The installer binds the plugin to this checkout's CLI; keep the checkout in place, or reinstall after moving it.
+Run these commands in the same OS environment as Hermes. For Hermes in WSL, use WSL Node and repository paths such as `/mnt/d/Development/cartograph`. Restart an existing Hermes session to load the tools. The installer binds the plugin to the installed CLI; rerun the install command after moving the package or changing Node.
 
 See the [Hermes setup and real-repository example](docs/examples/hermes.md) for profile settings, verification, and removal. The plugin caches source excerpts under the selected Hermes profile and supports an optional repository allowlist. Static matching can miss relevant code, so check the returned source before editing.
+
+For a Hermes-managed plugin checkout, see the [standalone plugin guide](assets/hermes/README.md)
+and the [commit-pinned installation option](docs/examples/hermes.md#optional-let-hermes-manage-the-plugin-checkout).
 
 ## Claude Code Plugin
 

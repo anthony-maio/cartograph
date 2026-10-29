@@ -3,6 +3,27 @@ version: 0.1.0
 description: Local repository maps and task-focused source context from Cartograph.
 kind: standalone
 python_runtime: external
+requires_hermes: ">=0.22.2"
+author: Anthony Maio
+homepage: https://github.com/anthony-maio/cartograph
 provides_tools:
   - cartograph_analyze
   - cartograph_context
+config_schema:
+  node_path:
+    type: str
+    description: Absolute Node executable path for a Hermes-managed installation.
+  cli_path:
+    type: str
+    description: Absolute path to the installed Cartograph dist/cli.cjs file.
+  allowed_roots:
+    type: list
+    description: Optional absolute repository roots; an empty list denies all repositories.
+  timeout_seconds:
+    type: int
+    default: 120
+    description: Analysis deadline, from 5 through 300 seconds.
+  max_output_chars:
+    type: int
+    default: 40000
+    description: Maximum response characters, from 4000 through 100000.
